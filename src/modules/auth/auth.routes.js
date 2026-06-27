@@ -1,12 +1,9 @@
-const register = async (req, res, next) => {
+const router = require('express').Router();
+const { registerSchema, loginSchema } = require('./auth.validation');
+const validateMiddleware = require('../../middlewares/validate.middleware');
+const { register, login } = require('./auth.controller');
 
-};
+router.post('/register', validateMiddleware(registerSchema), register);
+router.post('/login', validateMiddleware(loginSchema), login);
 
-const login = async (req, res, next) => {
-
-};
-
-module.exports = {
-    register,
-    login,
-};
+module.exports = router;

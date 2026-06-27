@@ -1,12 +1,11 @@
 const express = require('express');
+const authRouter = require('./modules/auth/auth.routes');
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
 app.use(express.json());
-
-//test route
-app.get('/', (req, res) => {
-    res.status(200).send('Hello World!');
-})
+app.use('/api/v1/auth', authRouter);
+app.use(errorHandler);
 
 module.exports = app;
