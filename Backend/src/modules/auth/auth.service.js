@@ -1,7 +1,6 @@
 const userModel = require('../users/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
 const register = async (userData) => {
     if(await userModel.findOne({email: userData.email})) {
@@ -17,33 +16,35 @@ const register = async (userData) => {
         password: hashedPassword,
     };
     
-    const user = await userModel.create(hashedUserData);
-    const userObject = user.toObject();
-    delete userObject.password;
-    return userObject;
+    const userDocument = await userModel.create(hashedUserData);
+    const safeUser = userDocument.toObject();
+    delete safeUser.password;
+    return safeUser;
 }
 
 const login = async (userData) => {
-    const user = await userModel.findOne({email: userData.email});
-    if(!user) {
+    const userDocument = await userModel.findOne({email: userData.email});
+    if(!userDocument) {
         const error = new Error('User not found');
         error.status = 400;
         throw error;
     }
-    const passwordMatch = await bcrypt.compare(userData.password, user.password);
+    const passwordMatch = await bcrypt.compare(userData.password, userDocument.password);
     if(!passwordMatch) {
         const error = new Error('Incorrect Password');
         error.status = 400;
         throw error;
     }
     const options = {
-        expiresIn: '1h',
+        expiresIn: process.env.JWT_EXPIRES_IN,
     }
-    const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, options);
+    const token = jwt.sign({id: userDocument._id}, process.env.JWT_SECRET, options);
 
-    const userObject = user.toObject();
-    delete userObject.password;
-    return {token, userObject};
+    const safeUser = userDocument.toObject();
+    delete safeUser.password;
+    return {
+        accessToken: token, 
+        user: safeUser};
 }
 
 module.exports = {
