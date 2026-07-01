@@ -1,3 +1,4 @@
+const { success } = require('zod');
 const authService = require('./auth.service');
 
 const register = async (req, res, next) => {
@@ -28,7 +29,21 @@ const login = async (req, res, next) => {
     }
 };
 
+const getCurrentUser = async (req, res, next) => {
+    try {
+        res.status(200).json({
+            success: true,
+            message: 'User Fetched Successfully',
+            data: req.user,
+        })
+    }
+    catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     register,
     login,
+    getCurrentUser,
 };
