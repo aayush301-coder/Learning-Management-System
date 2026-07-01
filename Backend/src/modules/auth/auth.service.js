@@ -8,18 +8,20 @@ const register = async (userData) => {
         error.status = 400;
         throw error;
     }
-    const userPassword = userData.password;
+    const { confirmPassword: _, ...userDataWithoutConfirmPassword } = userData;
+
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(userPassword, salt);
+    const hashedPassword = await bcrypt.hash(userDataWithoutConfirmPassword.password, salt);
+
     const hashedUserData = {
-        ...userData,
+        ...userDataWithoutConfirmPassword,
         password: hashedPassword,
     };
-    
+
     const userDocument = await userModel.create(hashedUserData);
-    const safeUser = userDocument.toObject();
-    delete safeUser.password;
-    return safeUser;
+        const safeUser = userDocument.toObject();
+        delete safeUser.password;
+        return safeUser;
 }
 
 const login = async (userData) => {
@@ -39,12 +41,13 @@ const login = async (userData) => {
         expiresIn: process.env.JWT_EXPIRES_IN,
     }
     const token = jwt.sign({id: userDocument._id}, process.env.JWT_SECRET, options);
-
     const safeUser = userDocument.toObject();
     delete safeUser.password;
+    
     return {
         accessToken: token, 
-        user: safeUser};
+        user: safeUser
+    };
 }
 
 module.exports = {
