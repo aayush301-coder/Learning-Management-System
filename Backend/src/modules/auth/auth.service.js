@@ -1,9 +1,9 @@
-const userModel = require('../users/user.model');
+const User = require('../users/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const register = async (userData) => {
-    if(await userModel.findOne({email: userData.email})) {
+    if(await User.findOne({email: userData.email})) {
         const error = new Error('Email already exists');
         error.status = 400;
         throw error;
@@ -18,14 +18,14 @@ const register = async (userData) => {
         password: hashedPassword,
     };
 
-    const userDocument = await userModel.create(hashedUserData);
+    const userDocument = await User.create(hashedUserData);
         const safeUser = userDocument.toObject();
         delete safeUser.password;
         return safeUser;
 }
 
 const login = async (userData) => {
-    const userDocument = await userModel.findOne({email: userData.email});
+    const userDocument = await User.findOne({email: userData.email});
     if(!userDocument) {
         const error = new Error('User not found');
         error.status = 400;

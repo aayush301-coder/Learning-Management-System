@@ -8,30 +8,34 @@ const userSchema = new mongoose.Schema ({
     },
     email: {
         type: String,
-        required: true,
+        required: [true, 'Email is required'],
         trim: true,
         unique: true,
         lowercase: true
     },
     password: {
         type: String,
-        required: true,
+        required: [true, 'Password is required'],
         minLength: 6
     },
     role: {
         type: String,
-        enum: ['student', 'instructor', 'admin'],
+        enum: {
+            values: ['student', 'instructor', 'admin'],
+            message: 'User Role is not valid'
+        },
         default: 'student'
     },
     avatar: {
         type: String,
-        trim: true
+        trim: true,
+        default: null,
     }
 },
 {
     timestamps: true
 });
 
-const userModel = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
 
-module.exports = userModel;
+module.exports = User;
