@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { courseCategories, courseLevels, courseLanguages, courseStatus } = require("../../constants/course.constants");
 
 const courseSchema = new mongoose.Schema({
     title: {
@@ -38,7 +39,7 @@ const courseSchema = new mongoose.Schema({
         required: [true, 'Course category is required'],
         
         enum: {
-            values: ['web_development','mobile_development','data_science','artificial_intelligence','machine_learning','cyber_security','cloud_computing','devops','programming_languages','database','ui_ux_design', 'business','marketing','productivity'],
+            values: courseCategories,
             message: 'Course category is not valid'
         }
     },
@@ -46,7 +47,7 @@ const courseSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Course level is required'],
         enum: {
-            values: ['beginner','intermediate','advanced'],
+            values: courseLevels,
             message: 'Course level is not valid'
         },
     },
@@ -55,7 +56,7 @@ const courseSchema = new mongoose.Schema({
         required: [true, 'Course language is required'],
         trim: true,
         enum: {
-            values: ['english','hindi','spanish','french'],
+            values: courseLanguages,
             message: 'Course language is not valid'
         },
     },
@@ -70,7 +71,7 @@ const courseSchema = new mongoose.Schema({
         required: [true, 'Course status is required'],
         default: 'draft',
         enum: {
-            values: ['draft','pending_review', 'published', 'unpublished', 'archived'],
+            values: courseStatus,
             message: 'Course status is not valid'
         },
     },
