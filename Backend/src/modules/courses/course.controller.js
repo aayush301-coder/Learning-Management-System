@@ -19,7 +19,17 @@ const getAllCourses = asyncHandler(async (req, res) => {
     });
 });
 
+const getCourseById = asyncHandler(async (req, res) => {
+    const result = await courseService.getCourseById(req.validated.params, req.user);
+    return res.status(200).json({
+        success: true,
+        message: 'Course Retrieved Successfully',
+        data: result
+    });
+});
+
 module.exports = {
     createCourse,
     getAllCourses,
+    getCourseById,
 }

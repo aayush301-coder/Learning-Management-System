@@ -24,8 +24,16 @@ const getAllCoursesSchema = z.object({
     sortOrder: z.enum(['asc', 'desc'], { message: 'Invalid sort order' }).default('desc'),
 });
 
+const getCourseByIdSchema = z.object({
+    courseId: z.string().regex(
+        /^[0-9a-fA-F]{24}$/,
+        'Invalid course ID'
+    ),
+});
+
 module.exports = {
     createCourseSchema,
     updateCourseSchema,
     getAllCoursesSchema,
+    getCourseByIdSchema,
 }

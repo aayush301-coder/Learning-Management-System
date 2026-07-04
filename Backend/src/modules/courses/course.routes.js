@@ -3,17 +3,17 @@ const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
 const { createCourse, getAllCourses, getCourseById, updateCourse, deleteCourse } = require('./course.controller');
-const { createCourseSchema, updateCourseSchema, getAllCoursesSchema } = require('./course.validation');
+const { createCourseSchema, updateCourseSchema, getAllCoursesSchema, getCourseByIdSchema } = require('./course.validation');
 
 // Create a new course
 router.post('/', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(createCourseSchema),createCourse);
 
 // Get all courses
 router.get('/', authMiddleware, authorizeMiddleware('student', 'instructor', 'admin'), validateMiddleware(getAllCoursesSchema, 'query'), getAllCourses);
-/*
-// Get a course by ID
-router.get('/:courseId', authMiddleware, authorizeMiddleware('student', 'instructor', 'admin'), getCourseById);
 
+// Get a course by ID
+router.get('/:courseId', authMiddleware, authorizeMiddleware('student', 'instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), getCourseById);
+/*
 // Update a course
 router.patch('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(updateCourseSchema), updateCourse);
 

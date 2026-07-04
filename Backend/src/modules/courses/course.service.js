@@ -1,3 +1,4 @@
+const { success } = require('zod');
 const Course = require('./course.model');
 const slugify = require('slugify');
 
@@ -20,6 +21,19 @@ const generateUniqueSlug = async (title) => {
     }
 
     return slug;
+};
+
+const canViewCourse = (course, authenticatedUser) => {
+    if (authenticatedUser.role === 'admin') {
+        return true;
+    }
+    if (authenticatedUser.role === 'student') {
+        return course.status === 'published';
+    }
+    if (authenticatedUser.role === 'instructor') {
+        return course.instructor.toString() === authenticatedUser._id.toString() || course.status === 'published';
+    }
+    return false;
 };
 
 const buildVisibilityFilter = (authenticatedUser) => {
@@ -134,7 +148,28 @@ const getAllCourses = async (validatedQuery, authenticatedUser) => {
     };
 };
 
+const getCourseById = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+
+    const course = await Course.findById(courseId).lean();
+
+    if (!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    if (!canViewCourse(course, authenticatedUser)) {
+        const error = new Error('You are not authorized to access this course');
+        error.statusCode = 403;
+        throw error;
+    }
+
+    return course;
+};
+
 module.exports = {
     createCourse,
     getAllCourses,
+    getCourseById,
 };
