@@ -11,7 +11,11 @@ const createCourseSchema = z.object({
     price: z.coerce.number().min(0, 'Course price cannot be negative'),
 });
 
-const updateCourseSchema = createCourseSchema.partial();
+const updateCourseSchema = createCourseSchema
+    .partial()
+    .refine((data) => Object.keys(data).length > 0, {
+        message: 'At least one field must be provided for update',
+    });
 
 const getAllCoursesSchema = z.object({
     page: z.coerce.number().min(1, 'Page number must be positive').default(1),

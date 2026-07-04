@@ -28,8 +28,20 @@ const getCourseById = asyncHandler(async (req, res) => {
     });
 });
 
+const updateCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.updateCourse(req.validated.params, req.validated.body, req.user);
+    return res.status(200).json({
+        success: true,
+        message: 'Course Updated Successfully',
+        data: result
+    });
+});
+
+
+
 module.exports = {
     createCourse,
     getAllCourses,
     getCourseById,
+    updateCourse,
 }

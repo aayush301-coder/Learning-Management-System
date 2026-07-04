@@ -36,6 +36,18 @@ const canViewCourse = (course, authenticatedUser) => {
     return false;
 };
 
+const canManageCourse = (course, authenticatedUser) => {
+    if (authenticatedUser.role === 'admin') {
+        return true;
+    }
+
+    if (authenticatedUser.role === 'instructor') {
+        return course.instructor.toString() === authenticatedUser._id.toString();
+    }
+
+    return false;
+};
+
 const buildVisibilityFilter = (authenticatedUser) => {
     if (authenticatedUser.role === 'admin') {
         return {};
@@ -168,8 +180,34 @@ const getCourseById = async (validatedParams, authenticatedUser) => {
     return course;
 };
 
+const updateCourse = async (validatedParams, validatedCourseData, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if (!canManageCourse(course, authenticatedUser)) {
+        const error = new Error('You are not authorized to update this course');
+        error.statusCode = 403;
+        throw error;
+    }
+    if(validatedCourseData.title && validatedCourseData.title !== course.title) {
+        validatedCourseData.title = validatedCourseData.title.trim();
+        const newSlug = await generateUniqueSlug(validatedCourseData.title);
+        validatedCourseData.slug = newSlug;
+    }
+
+    course.set(validatedCourseData);
+    await course.save();
+    return course;
+};
+
 module.exports = {
     createCourse,
     getAllCourses,
     getCourseById,
+    updateCourse,
 };

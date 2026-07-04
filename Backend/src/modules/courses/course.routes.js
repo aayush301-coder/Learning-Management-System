@@ -13,11 +13,11 @@ router.get('/', authMiddleware, authorizeMiddleware('student', 'instructor', 'ad
 
 // Get a course by ID
 router.get('/:courseId', authMiddleware, authorizeMiddleware('student', 'instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), getCourseById);
-/*
-// Update a course
-router.patch('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(updateCourseSchema), updateCourse);
 
+// Update a course
+router.patch('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), validateMiddleware(updateCourseSchema), updateCourse);
+/*
 // Delete a course
-router.delete('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), deleteCourse);
+router.delete('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), validateMiddleware(deleteCourseSchema), deleteCourse);
 */
 module.exports = router;
