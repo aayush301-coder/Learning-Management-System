@@ -36,9 +36,18 @@ const courseStatus = [
     'archived',
 ];
 
+const courseSortFields = [
+    'title',
+    'price',
+    'createdAt',
+    'updatedAt',
+];
+
+
 module.exports = {
     courseCategories,
     courseLevels,
     courseLanguages,
     courseStatus,
+    courseSortFields,
 }

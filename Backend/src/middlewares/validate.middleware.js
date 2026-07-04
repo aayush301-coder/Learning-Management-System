@@ -1,6 +1,6 @@
-const validateMiddleware = (schema) => {
+const validateMiddleware = (schema, validationSource = 'body') => {
     return (req, res, next) => {
-        const result = schema.safeParse(req.body);
+        const result = schema.safeParse(req[validationSource]);
 
         if (!result.success) {
             result.error.statusCode = 400;
@@ -10,7 +10,8 @@ const validateMiddleware = (schema) => {
             return next(result.error);
         }
 
-        req.body = result.data;
+        req.validated = req.validated || {};
+        req.validated[validationSource] = result.data;
 
         return next();
     };

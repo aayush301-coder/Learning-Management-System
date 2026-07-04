@@ -1,5 +1,5 @@
 const { z } = require("zod");
-const { courseCategories, courseLevels, courseLanguages } = require("../../constants/course.constants");
+const { courseCategories, courseLevels, courseLanguages, courseSortFields } = require("../../constants/course.constants");
 
 const createCourseSchema = z.object({
     title: z.string().trim().min(5, 'Course title must be at least 5 characters long').max(150, 'Course title cannot exceed 150 characters'),
@@ -13,7 +13,19 @@ const createCourseSchema = z.object({
 
 const updateCourseSchema = createCourseSchema.partial();
 
+const getAllCoursesSchema = z.object({
+    page: z.coerce.number().min(1, 'Page number must be positive').default(1),
+    limit: z.coerce.number().min(1, 'Limit must be at least 1').max(100, 'Limit cannot exceed 100').default(10),
+    search: z.preprocess((value) => value === '' ? undefined : value, z.string().trim().max(100, 'Search query cannot exceed 100 characters').optional()),
+    category: z.enum(courseCategories, { message: 'Course category is not valid' }).optional(),
+    level: z.enum(courseLevels, { message: 'Course level is not valid' }).optional(),
+    language: z.enum(courseLanguages, { message: 'Course language is not valid' }).optional(),
+    sortBy: z.enum(courseSortFields, { message: 'Invalid sort field' }).default('createdAt'),
+    sortOrder: z.enum(['asc', 'desc'], { message: 'Invalid sort order' }).default('desc'),
+});
+
 module.exports = {
     createCourseSchema,
     updateCourseSchema,
+    getAllCoursesSchema,
 }
