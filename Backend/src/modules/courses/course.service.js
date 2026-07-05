@@ -1,4 +1,3 @@
-const { success } = require('zod');
 const Course = require('./course.model');
 const slugify = require('slugify');
 
@@ -223,10 +222,87 @@ const deleteCourse = async (validatedParams, authenticatedUser) => {
     return;
 };
 
+const submitCourseForReview = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if (course.instructor.toString() !== authenticatedUser._id.toString()) {
+        const error = new Error('You are not authorized to submit this course');
+        error.statusCode = 403;
+        throw error;
+    }
+    if (course.status !== 'draft') {
+        const error = new Error(`Course cannot be submitted for review from status: ${course.status}`);
+        error.statusCode = 409;
+        throw error;
+    }
+    course.status = 'pending_review';
+    await course.save();
+    return course;
+};
+
+const publishCourse = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if (authenticatedUser.role !== 'admin') {
+        const error = new Error('Only admin can publish courses');
+        error.statusCode = 403;
+        throw error;
+    }
+    if (course.status !== 'pending_review') {
+        const error = new Error(`Only courses in pending_review can be published. Current status: ${course.status}`);
+        error.statusCode = 409;
+        throw error;
+    }
+
+    course.status = 'published';
+    await course.save();
+    return course;
+};
+
+const unpublishCourse = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+    
+    if(!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if(!canManageCourse(course, authenticatedUser)) {
+        const error = new Error('You are not authorized to unpublish this course');
+        error.statusCode = 403;
+        throw error;
+    }
+    if(course.status !== 'published') {
+        const error = new Error(`Only published courses can be unpublished. Current status: ${course.status}`);
+        error.statusCode = 409;
+        throw error;
+    }
+
+    course.status = 'unpublished';
+    await course.save();
+    return course;
+}
+
 module.exports = {
     createCourse,
     getAllCourses,
     getCourseById,
     updateCourse,
     deleteCourse,
+    submitCourseForReview,
+    publishCourse,
+    unpublishCourse,
 };

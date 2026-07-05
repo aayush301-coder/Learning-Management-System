@@ -35,9 +35,30 @@ const getCourseByIdSchema = z.object({
     ),
 });
 
+const submitCourseForReviewSchema = z.object({
+    courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, {
+        message: 'Invalid course ID',
+    }),
+});
+
+const publishCourseSchema = z.object({
+    courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, {
+        message: 'Invalid course ID',
+    }),
+});
+
+const unpublishCourseSchema = z.object({
+    courseId: z.string().regex(/^[0-9a-fA-F]{24}$/, {
+        message: 'Invalid course ID',
+    }),
+});
+
 module.exports = {
     createCourseSchema,
     updateCourseSchema,
     getAllCoursesSchema,
     getCourseByIdSchema,
+    submitCourseForReviewSchema,
+    publishCourseSchema,
+    unpublishCourseSchema,
 }

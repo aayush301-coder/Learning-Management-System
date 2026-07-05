@@ -38,14 +38,38 @@ const updateCourse = asyncHandler(async (req, res) => {
 });
 
 const deleteCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.deleteCourse(req.validated.params, req.user);
     return res.status(200).json({
         success: true,
         message: 'Course Deleted Successfully',
     });
 });
 
+const submitCourseForReview = asyncHandler(async (req, res) => {
+    const result = await courseService.submitCourseForReview(req.validated.params, req.user);
+    return res.status(200).json({
+        success: true,
+        message: 'Course submitted for review successfully',
+        data: result,
+    });
+});
 
+const publishCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.publishCourse(req.validated.params, req.user);
+    return res.status(200).json({
+        sucess:true,
+        message:'Course Published Successfully',
+        data:result,
+    });
+});
+
+const unpublishCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.unpublishCourse(req.validated.params, req.user);
+    return res.status(200).json({
+        success:true,
+        message: 'Course Unpublished Successfully',
+        data: result,
+    });
+});
 
 module.exports = {
     createCourse,
@@ -53,4 +77,7 @@ module.exports = {
     getCourseById,
     updateCourse,
     deleteCourse,
+    submitCourseForReview,
+    publishCourse,
+    unpublishCourse,
 };
