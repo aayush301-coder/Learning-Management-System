@@ -16,8 +16,8 @@ router.get('/:courseId', authMiddleware, authorizeMiddleware('student', 'instruc
 
 // Update a course
 router.patch('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), validateMiddleware(updateCourseSchema), updateCourse);
-/*
+
 // Delete a course
-router.delete('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), validateMiddleware(deleteCourseSchema), deleteCourse);
-*/
+router.delete('/:courseId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(getCourseByIdSchema, 'params'), deleteCourse);
+
 module.exports = router;

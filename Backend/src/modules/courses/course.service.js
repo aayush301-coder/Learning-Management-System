@@ -205,9 +205,28 @@ const updateCourse = async (validatedParams, validatedCourseData, authenticatedU
     return course;
 };
 
+const deleteCourse = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+
+    if(!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if(!canManageCourse(course, authenticatedUser)) {
+        const error = new Error('You are not authorized to delete this course');
+        error.statusCode = 403;
+        throw error;
+    }
+    await course.deleteOne();
+    return;
+};
+
 module.exports = {
     createCourse,
     getAllCourses,
     getCourseById,
     updateCourse,
+    deleteCourse,
 };
