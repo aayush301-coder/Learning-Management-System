@@ -19,6 +19,15 @@ const getAllCourses = asyncHandler(async (req, res) => {
     });
 });
 
+const getMyCourses = asyncHandler(async (req, res) => {
+    const result = await courseService.getMyCourses(req.validated.query,req.user);
+    return res.status(200).json({
+        success: true,
+        message: 'My Courses Retrieved Successfully',
+        data: result,
+    });
+});
+
 const getCourseById = asyncHandler(async (req, res) => {
     const result = await courseService.getCourseById(req.validated.params, req.user);
     return res.status(200).json({
@@ -71,13 +80,34 @@ const unpublishCourse = asyncHandler(async (req, res) => {
     });
 });
 
+const archiveCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.archiveCourse(req.validated.params, req.user);
+    return res.status(200).json({
+        success:true,
+        message: 'Course Archived Successfully',
+        data: result,
+    });
+});
+
+const restoreArchivedCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.restoreArchivedCourse(req.validated.params, req.user);
+    return res.status(200).json({
+        success:true,
+        message: 'Course Restored Successfully',
+        data: result,
+    });
+});
+
 module.exports = {
     createCourse,
     getAllCourses,
+    getMyCourses,
     getCourseById,
     updateCourse,
     deleteCourse,
     submitCourseForReview,
     publishCourse,
     unpublishCourse,
+    archiveCourse,
+    restoreArchivedCourse,
 };

@@ -22,9 +22,23 @@ const generateUniqueSlug = async (title) => {
     return slug;
 };
 
+const canManageCourse = (course, authenticatedUser) => {
+    if (authenticatedUser.role === 'admin') {
+        return true;
+    }
+    if (authenticatedUser.role === 'instructor') {
+        return course.instructor.toString() === authenticatedUser._id.toString();
+    }
+
+    return false;
+};
+
 const canViewCourse = (course, authenticatedUser) => {
     if (authenticatedUser.role === 'admin') {
         return true;
+    }
+    if (course.status === 'archived') {
+        return canManageCourse(course, authenticatedUser);
     }
     if (authenticatedUser.role === 'student') {
         return course.status === 'published';
@@ -32,18 +46,6 @@ const canViewCourse = (course, authenticatedUser) => {
     if (authenticatedUser.role === 'instructor') {
         return course.instructor.toString() === authenticatedUser._id.toString() || course.status === 'published';
     }
-    return false;
-};
-
-const canManageCourse = (course, authenticatedUser) => {
-    if (authenticatedUser.role === 'admin') {
-        return true;
-    }
-
-    if (authenticatedUser.role === 'instructor') {
-        return course.instructor.toString() === authenticatedUser._id.toString();
-    }
-
     return false;
 };
 
@@ -60,12 +62,17 @@ const buildVisibilityFilter = (authenticatedUser) => {
         return {
             $or: [
                 { status: 'published' },
-                { instructor: authenticatedUser._id },
+                {
+                    instructor: authenticatedUser._id,
+                    status: { $ne: 'archived' },
+                },
             ],
         };
     }
 
-    return {};
+    return {
+        _id: null,
+    };
 };
 
 const buildSearchFilter = (search) => {
@@ -159,9 +166,65 @@ const getAllCourses = async (validatedQuery, authenticatedUser) => {
     };
 };
 
+const getMyCourses = async (validatedQuery, authenticatedUser) => {
+    const {
+        page,
+        limit,
+        search,
+        sortBy,
+        sortOrder,
+        status,
+        category,
+        level,
+    } = validatedQuery;
+    const skip = (page - 1) * limit;
+    const baseFilter = {
+        instructor: authenticatedUser._id,
+    };
+
+    if (status) {
+        baseFilter.status = status;
+    }
+    if (category) {
+        baseFilter.category = category;
+    }
+    if (level) {
+        baseFilter.level = level;
+    }
+
+    const searchFilter = search ? {
+              $or: [
+                  { title: { $regex: search, $options: 'i' } },
+                  { description: { $regex: search, $options: 'i' } },
+              ],
+    }
+    : {};
+    const filter = {
+        ...baseFilter,
+        ...searchFilter,
+    };
+    const sort = {
+        [sortBy]: sortOrder === 'desc' ? -1 : 1,
+    };
+    const totalDocuments = await Course.countDocuments(filter);
+    const courses = await Course.find(filter).sort(sort).skip(skip).limit(limit).lean();
+    const totalPages = Math.ceil(totalDocuments / limit);
+
+    return {
+        courses,
+        pagination: {
+            page,
+            limit,
+            totalDocuments,
+            totalPages,
+            hasNextPage: page < totalPages,
+            hasPreviousPage: page > 1,
+        },
+    };
+};
+
 const getCourseById = async (validatedParams, authenticatedUser) => {
     const { courseId } = validatedParams;
-
     const course = await Course.findById(courseId).lean();
 
     if (!course) {
@@ -169,7 +232,6 @@ const getCourseById = async (validatedParams, authenticatedUser) => {
         error.statusCode = 404;
         throw error;
     }
-
     if (!canViewCourse(course, authenticatedUser)) {
         const error = new Error('You are not authorized to access this course');
         error.statusCode = 403;
@@ -186,6 +248,11 @@ const updateCourse = async (validatedParams, validatedCourseData, authenticatedU
     if (!course) {
         const error = new Error('Course not found');
         error.statusCode = 404;
+        throw error;
+    }
+    if (course.status === 'archived') {
+        const error = new Error('Archived courses cannot be updated');
+        error.statusCode = 409;
         throw error;
     }
     if (!canManageCourse(course, authenticatedUser)) {
@@ -260,8 +327,8 @@ const publishCourse = async (validatedParams, authenticatedUser) => {
         error.statusCode = 403;
         throw error;
     }
-    if (course.status !== 'pending_review') {
-        const error = new Error(`Only courses in pending_review can be published. Current status: ${course.status}`);
+    if (course.status !== 'pending_review' && course.status !== 'unpublished') {
+        const error = new Error(`Only courses in pending_review or are unpublished can be published. Current status: ${course.status}`);
         error.statusCode = 409;
         throw error;
     }
@@ -294,15 +361,68 @@ const unpublishCourse = async (validatedParams, authenticatedUser) => {
     course.status = 'unpublished';
     await course.save();
     return course;
+};
+
+const archiveCourse = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+
+    if(!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if(authenticatedUser.role !== 'admin') {
+        const error = new Error('You are not authorized to archive the course');
+        error.statusCode = 403;
+        throw error;
+    }
+    if(course.status === 'archived') {
+        const error = new Error(`Course is already archived. Current status: ${course.status}`);
+        error.statusCode = 409;
+        throw error;
+    }
+
+    course.status = 'archived';
+    await course.save();
+    return course;
+};
+
+const restoreArchivedCourse = async (validatedParams, authenticatedUser) => {
+    const { courseId } = validatedParams;
+    const course = await Course.findById(courseId);
+    
+    if(!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+    if(authenticatedUser.role !== 'admin') {
+        const error = new Error('You are not authorized to restore this course');
+        error.statusCode = 403;
+        throw error;
+    }
+    if(course.status !== 'archived') {
+        const error = new Error(`Only archived courses can be restored. Current status: ${course.status}`);
+        error.statusCode = 409;
+        throw error;
+    }
+
+    course.status = 'unpublished';
+    await course.save();
+    return course;
 }
 
 module.exports = {
     createCourse,
     getAllCourses,
+    getMyCourses,
     getCourseById,
     updateCourse,
     deleteCourse,
     submitCourseForReview,
     publishCourse,
     unpublishCourse,
+    archiveCourse,
+    restoreArchivedCourse,
 };

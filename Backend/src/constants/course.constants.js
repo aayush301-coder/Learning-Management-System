@@ -13,6 +13,7 @@ const courseCategories = [
     'business',
     'marketing',
     'productivity',
+    'programming',
 ];
 
 const courseLevels = [
