@@ -3,7 +3,7 @@ const sectionService = require('./section.service');
 
 const createSection = asyncHandler(async (req, res) => {
     const result = await sectionService.createSection(req.validated.params, req.validated.body, req.user);
-    res.status(201).json({
+    return res.status(201).json({
         success: true,
         message: 'Section Created Successfully',
         data: result
@@ -12,7 +12,7 @@ const createSection = asyncHandler(async (req, res) => {
 
 const getSectionsByCourse = asyncHandler(async (req, res) => {
     const result = await sectionService.getSectionsByCourse(req.validated.params, req.user);
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: 'Sections Fetched Successfully',
         data: result
@@ -21,7 +21,7 @@ const getSectionsByCourse = asyncHandler(async (req, res) => {
 
 const getSectionById = asyncHandler(async (req, res) => {
     const result = await sectionService.getSectionById(req.validated.params, req.user);
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: 'Section Fetched Successfully',
         data: result
@@ -30,7 +30,7 @@ const getSectionById = asyncHandler(async (req, res) => {
 
 const updateSection = asyncHandler(async (req, res) => {
     const result = await sectionService.updateSection(req.validated.params, req.validated.body, req.user);
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: 'Section Updated Successfully',
         data: result
@@ -39,7 +39,7 @@ const updateSection = asyncHandler(async (req, res) => {
 
 const deleteSection = asyncHandler(async (req, res) => {
     const result = await sectionService.deleteSection(req.validated.params, req.user);
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: result.message
     });
