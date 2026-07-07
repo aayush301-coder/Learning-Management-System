@@ -47,6 +47,7 @@ const updateCourse = asyncHandler(async (req, res) => {
 });
 
 const deleteCourse = asyncHandler(async (req, res) => {
+    const result = await courseService.deleteCourse(req.validated.params, req.user);
     return res.status(200).json({
         success: true,
         message: 'Course Deleted Successfully',
