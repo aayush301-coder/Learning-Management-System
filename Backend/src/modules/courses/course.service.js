@@ -425,4 +425,6 @@ module.exports = {
     unpublishCourse,
     archiveCourse,
     restoreArchivedCourse,
+    canManageCourse,
+    canViewCourse,
 };

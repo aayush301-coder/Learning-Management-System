@@ -1,6 +1,7 @@
 const express = require('express');
 const authRouter = require('./modules/auth/auth.routes');
 const courseRouter = require('./modules/courses/course.routes');
+const sectionRouter = require('./modules/sections/section.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -20,6 +21,7 @@ app.get('/health', (req, res) => {
 //API Routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/courses', courseRouter);
+app.use('/api/v1', sectionRouter);
 
 //404 Route Handler
 app.use((req, res) => {
