@@ -9,6 +9,7 @@ const courseSchema = new mongoose.Schema({
         minlength: [5, 'Course title must be at least 5 characters long'],
         maxlength: [150, 'Course title cannot exceed 150 characters'],
     },
+
     slug: {
         type: String,
         trim: true,
@@ -16,6 +17,7 @@ const courseSchema = new mongoose.Schema({
         lowercase: true,
         index: true,
     },
+
     description: {
         type: String,
         required: [true, 'Course description is required'],
@@ -23,26 +25,29 @@ const courseSchema = new mongoose.Schema({
         minlength: [10, 'Course description must be at least 10 characters long'],
         maxlength: [5000, 'Course description cannot exceed 5000 characters'],
     },
+
     instructor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: [true, 'Course instructor is required'],
         index: true,
     },
+
     thumbnail: {
         type: String,
         default: null,
         trim: true,
     },
+
     category: {
         type: String,
         required: [true, 'Course category is required'],
-        
         enum: {
             values: courseCategories,
             message: 'Course category is not valid'
         }
     },
+
     level: {
         type: String,
         required: [true, 'Course level is required'],
@@ -51,6 +56,7 @@ const courseSchema = new mongoose.Schema({
             message: 'Course level is not valid'
         },
     },
+
     language: {
         type: String,
         required: [true, 'Course language is required'],
@@ -60,12 +66,14 @@ const courseSchema = new mongoose.Schema({
             message: 'Course language is not valid'
         },
     },
+
     price: {
         type: Number,
         required: [true, 'Course price is required'],
         min: [0, 'Course price cannot be negative'],
         default: 0,
     },
+
     status: {
         type: String,
         required: [true, 'Course status is required'],
@@ -75,10 +83,31 @@ const courseSchema = new mongoose.Schema({
             message: 'Course status is not valid'
         },
     },
+
+    averageRating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+    },
+
+    reviewCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+
 },
 {
     timestamps: true,
 });
+
+
+courseSchema.index({
+    instructor: 1,
+    status: 1,
+});
+
 
 const Course = mongoose.model('Course', courseSchema);
 
