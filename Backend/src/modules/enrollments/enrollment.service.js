@@ -1,5 +1,6 @@
 const Enrollment = require('./enrollment.model');
 const Course = require('../courses/course.model');
+const Progress = require('../progress/progress.model');
 
 const enrollInCourse = async (validatedParams, authenticatedUser) => {
     const { courseId } = validatedParams;
@@ -33,6 +34,12 @@ const enrollInCourse = async (validatedParams, authenticatedUser) => {
         student: authenticatedUser._id,
         course: courseId,
     });
+
+    await Progress.create({
+        student: authenticatedUser._id,
+        course: courseId,
+    });
+
     return enrollment;
 };
 

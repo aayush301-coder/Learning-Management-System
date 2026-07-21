@@ -4,6 +4,7 @@ const courseRouter = require('./modules/courses/course.routes');
 const sectionRouter = require('./modules/sections/section.routes');
 const lessonRouter = require('./modules/lessons/lesson.routes');
 const enrollmentRouter = require('./modules/enrollments/enrollment.routes');
+const progressRouter = require('./modules/progress/progress.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/v1/courses', courseRouter);
 app.use('/api/v1', sectionRouter);
 app.use('/api/v1', lessonRouter);
 app.use('/api/v1', enrollmentRouter);
+app.use('/api/v1/progress', progressRouter);
 
 //404 Route Handler
 app.use((req, res) => {
