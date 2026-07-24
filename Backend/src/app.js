@@ -6,6 +6,9 @@ const lessonRouter = require('./modules/lessons/lesson.routes');
 const enrollmentRouter = require('./modules/enrollments/enrollment.routes');
 const progressRouter = require('./modules/progress/progress.routes');
 const reviewRouter = require('./modules/reviews/review.routes');
+const certificateRouter = require('./modules/certificates/certificate.routes');
+const wishlistRouter = require('./modules/wishlists/wishlist.routes');
+const paymentRouter = require('./modules/payments/payment.routes');
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -30,6 +33,9 @@ app.use('/api/v1', lessonRouter);
 app.use('/api/v1', enrollmentRouter);
 app.use('/api/v1/progress', progressRouter);
 app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/certificates', certificateRouter);
+app.use('/api/v1/wishlists', wishlistRouter);
+app.use('/api/v1/payments', paymentRouter);
 
 //404 Route Handler
 app.use((req, res) => {
