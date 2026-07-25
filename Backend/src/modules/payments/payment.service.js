@@ -1,6 +1,14 @@
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Course = require('../courses/course.model');
 const Enrollment = require('../enrollments/enrollment.model');
+const mongoose = require('mongoose');
+
+const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
 
 
 const createPaymentOrder = async (validatedParams, authenticatedUser) => {
@@ -40,24 +48,45 @@ const createPaymentOrder = async (validatedParams, authenticatedUser) => {
         throw error;
     }
 
+    const courseIdShort = courseId.toString().slice(-4);
+    const studentIdShort = authenticatedUser._id.toString().slice(-4);
+    const timeStamp = Date.now().toString(36);
+    const razorpayOrder = await razorpay.orders.create({
+        amount: course.price * 100,
+        currency: 'INR',
+        receipt: `c${courseIdShort}_s${studentIdShort}_${timeStamp}`,
+    });
+
+    const razorpayOrderId = razorpayOrder.id;
     const payment = await Payment.create({
         student: authenticatedUser._id,
         course: courseId,
+        gatewayOrderId: razorpayOrderId,
+        gatewayPaymentId: null,
         amount: course.price,
         currency: 'INR',
-        gatewayOrderId: null,
-        gatewayPaymentId: null,
         status: 'pending',
+        signature: null,
         paymentMethod: null,
         paidAt: null,
     });
 
-    return payment;
+    return {
+        payment,
+        razorpayOrderId,
+        amount: course.price,
+        currency: 'INR',
+    };
 };
 
 
-const verifyPayment = async (validatedParams, authenticatedUser) => {
+const verifyPayment = async (validatedParams, validatedBody, authenticatedUser) => {
     const { paymentId } = validatedParams;
+    const {
+        razorpay_payment_id,
+        razorpay_order_id,
+        razorpay_signature,
+    } = validatedBody;
 
     const payment = await Payment.findOne({
         _id: paymentId,
@@ -76,6 +105,27 @@ const verifyPayment = async (validatedParams, authenticatedUser) => {
         throw error;
     }
 
+    if (payment.gatewayOrderId !== razorpay_order_id) {
+        const error = new Error('Invalid Razorpay order ID');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const hmac = crypto.createHmac(
+        'sha256',
+        process.env.RAZORPAY_KEY_SECRET
+    );
+
+    hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+
+    const generatedSignature = hmac.digest('hex');
+
+    if (generatedSignature !== razorpay_signature) {
+        const error = new Error('Invalid payment signature');
+        error.statusCode = 400;
+        throw error;
+    }
+
     const existingEnrollment = await Enrollment.findOne({
         student: payment.student,
         course: payment.course,
@@ -87,22 +137,71 @@ const verifyPayment = async (validatedParams, authenticatedUser) => {
         throw error;
     }
 
-    payment.status = 'completed';
-    payment.paidAt = new Date();
+    const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
 
-    await payment.save();
+    if (razorpayPayment.amount !== payment.amount * 100) {
+        const error = new Error('Invalid payment amount');
+        error.statusCode = 400;
+        throw error;
+    }
 
-    const enrollment = await Enrollment.create({
-        student: payment.student,
-        course: payment.course,
-    });
+    if (razorpayPayment.currency !== payment.currency) {
+        const error = new Error('Invalid payment currency');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (razorpayPayment.order_id !== payment.gatewayOrderId) {
+        const error = new Error('Invalid Razorpay order ID');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (razorpayPayment.status !== 'captured') {
+        const error = new Error('Payment has not been captured');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    const session = await mongoose.startSession();
+    let enrollment;
+
+    try {
+        session.startTransaction();
+
+        payment.gatewayPaymentId = razorpay_payment_id;
+        payment.signature = razorpay_signature;
+        payment.paymentMethod = razorpayPayment.method;
+        payment.status = 'completed';
+        payment.paidAt = new Date();
+
+        await payment.save({ session });
+
+        const createdEnrollments = await Enrollment.create(
+            [
+                {
+                    student: payment.student,
+                    course: payment.course,
+                },
+            ],
+            { session }
+        );
+
+        enrollment = createdEnrollments[0];
+
+        await session.commitTransaction();
+    } catch (err) {
+        await session.abortTransaction();
+        throw err;
+    } finally {
+        await session.endSession();
+    }
 
     return {
         payment,
         enrollment,
     };
 };
-
 
 const getMyPayments = async (authenticatedUser) => {
     const payments = await Payment.find({

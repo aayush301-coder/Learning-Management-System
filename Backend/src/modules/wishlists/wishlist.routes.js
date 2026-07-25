@@ -1,19 +1,12 @@
 const express = require('express');
-
 const router = express.Router();
-
-
 const wishlistController = require('./wishlist.controller');
-
 const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
-
 const {
     courseIdParamsSchema,
 } = require('./wishlist.validation');
-
-
 
 router.post(
     '/:courseId',
@@ -23,8 +16,6 @@ router.post(
     wishlistController.addToWishlist
 );
 
-
-
 router.delete(
     '/:courseId',
     authMiddleware,
@@ -32,8 +23,6 @@ router.delete(
     validateMiddleware(courseIdParamsSchema, 'params'),
     wishlistController.removeFromWishlist
 );
-
-
 
 router.get(
     '/me',

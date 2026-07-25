@@ -18,9 +18,11 @@ const createPaymentOrder = asyncHandler(async (req, res) => {
 
 const verifyPayment = asyncHandler(async (req, res) => {
     const { paymentId } = req.validated.params;
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.validated.body;
 
     const result = await paymentService.verifyPayment(
         { paymentId },
+        { razorpay_payment_id, razorpay_order_id, razorpay_signature },
         req.user
     );
 
