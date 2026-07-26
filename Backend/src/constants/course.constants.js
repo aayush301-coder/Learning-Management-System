@@ -42,6 +42,7 @@ const courseSortFields = [
     'price',
     'createdAt',
     'updatedAt',
+    'averageRating',
 ];
 
 

@@ -1,6 +1,7 @@
 const Enrollment = require('./enrollment.model');
 const Course = require('../courses/course.model');
 const Progress = require('../progress/progress.model');
+const notificationService = require('../notifications/notification.service');
 
 const enrollInCourse = async (validatedParams, authenticatedUser) => {
     const { courseId } = validatedParams;
@@ -33,6 +34,14 @@ const enrollInCourse = async (validatedParams, authenticatedUser) => {
     const enrollment = await Enrollment.create({
         student: authenticatedUser._id,
         course: courseId,
+    });
+
+    await notificationService.createNotification({
+        recipient: authenticatedUser._id,
+        title: 'Enrollment Successful',
+        message: `You are now enrolled in ${course.title}`,
+        type: 'enrollment',
+        referenceId: course._id,
     });
 
     await Progress.create({

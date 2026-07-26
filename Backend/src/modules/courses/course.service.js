@@ -1,6 +1,6 @@
 const Course = require('./course.model');
 const slugify = require('slugify');
-
+const notificationService = require('../notifications/notification.service');
 
 // Private Helper Functions
 
@@ -81,25 +81,56 @@ const buildSearchFilter = (search) => {
     }
 
     return {
-        title: {
-            $regex: search,
-            $options: 'i',
-        },
+        $or: [
+            {
+                title: {
+                    $regex: search,
+                    $options: 'i',
+                },
+            },
+            {
+                description: {
+                    $regex: search,
+                    $options: 'i',
+                },
+            },
+        ],
     };
 };
 
 const buildCourseFilter = (validatedQuery) => {
-    const { category, level, language } = validatedQuery;
+    const {
+        category,
+        level,
+        language,
+        minPrice,
+        maxPrice,
+    } = validatedQuery;
+
     const filter = {};
 
     if (category) {
         filter.category = category;
     }
+
     if (level) {
         filter.level = level;
     }
+
     if (language) {
         filter.language = language;
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+        filter.price = {};
+
+        if (minPrice !== undefined) {
+            filter.price.$gte = minPrice;
+        }
+
+        if (maxPrice !== undefined) {
+            filter.price.$lte = maxPrice;
+        }
     }
 
     return filter;
@@ -150,8 +181,13 @@ const getAllCourses = async (validatedQuery, authenticatedUser) => {
     };
 
     const totalDocuments = await Course.countDocuments(filter);
-    const courses = await Course.find(filter).sort(sort).skip(skip).limit(limit).lean();
-    const totalPages = totalDocuments > 0 ? Math.ceil(totalDocuments / limit) : 0;
+    const courses = await Course.find(filter)
+    .populate('instructor', 'name avatar')
+    .sort(sort)
+    .skip(skip)
+    .limit(limit)
+    .lean();
+    const totalPages = (totalDocuments > 0 ? Math.ceil(totalDocuments / limit) : 0);
 
     return {
         courses,
@@ -208,7 +244,7 @@ const getMyCourses = async (validatedQuery, authenticatedUser) => {
     };
     const totalDocuments = await Course.countDocuments(filter);
     const courses = await Course.find(filter).sort(sort).skip(skip).limit(limit).lean();
-    const totalPages = Math.ceil(totalDocuments / limit);
+    const totalPages = totalDocuments > 0 ? Math.ceil(totalDocuments / limit) : 0;
 
     return {
         courses,
@@ -335,6 +371,15 @@ const publishCourse = async (validatedParams, authenticatedUser) => {
 
     course.status = 'published';
     await course.save();
+
+    await notificationService.createNotification({
+        recipient: course.instructor,
+        title: 'Course Published',
+        message: `Your course ${course.title} has been published.`,
+        type: 'course',
+        referenceId: course._id,
+    });
+
     return course;
 };
 

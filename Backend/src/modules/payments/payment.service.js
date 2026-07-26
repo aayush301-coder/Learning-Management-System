@@ -3,13 +3,15 @@ const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Course = require('../courses/course.model');
 const Enrollment = require('../enrollments/enrollment.model');
+const notificationService = require('../notifications/notification.service');
+const emailService = require('../../services/email.service');
+const User = require('../users/user.model');
 const mongoose = require('mongoose');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-
 
 const createPaymentOrder = async (validatedParams, authenticatedUser) => {
     const { courseId } = validatedParams;
@@ -79,7 +81,6 @@ const createPaymentOrder = async (validatedParams, authenticatedUser) => {
     };
 };
 
-
 const verifyPayment = async (validatedParams, validatedBody, authenticatedUser) => {
     const { paymentId } = validatedParams;
     const {
@@ -98,42 +99,24 @@ const verifyPayment = async (validatedParams, validatedBody, authenticatedUser) 
         error.statusCode = 404;
         throw error;
     }
-
     if (payment.status !== 'pending') {
-        const error = new Error('Payment is already processed');
+        const error = new Error('Payment already processed');
         error.statusCode = 400;
         throw error;
     }
-
     if (payment.gatewayOrderId !== razorpay_order_id) {
         const error = new Error('Invalid Razorpay order ID');
         error.statusCode = 400;
         throw error;
     }
 
-    const hmac = crypto.createHmac(
-        'sha256',
-        process.env.RAZORPAY_KEY_SECRET
-    );
-
+    const hmac = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
     hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-
     const generatedSignature = hmac.digest('hex');
 
     if (generatedSignature !== razorpay_signature) {
         const error = new Error('Invalid payment signature');
         error.statusCode = 400;
-        throw error;
-    }
-
-    const existingEnrollment = await Enrollment.findOne({
-        student: payment.student,
-        course: payment.course,
-    });
-
-    if (existingEnrollment) {
-        const error = new Error('Student is already enrolled in this course');
-        error.statusCode = 409;
         throw error;
     }
 
@@ -144,22 +127,33 @@ const verifyPayment = async (validatedParams, validatedBody, authenticatedUser) 
         error.statusCode = 400;
         throw error;
     }
-
     if (razorpayPayment.currency !== payment.currency) {
         const error = new Error('Invalid payment currency');
         error.statusCode = 400;
         throw error;
     }
-
-    if (razorpayPayment.order_id !== payment.gatewayOrderId) {
-        const error = new Error('Invalid Razorpay order ID');
+    if (razorpayPayment.status !== 'captured') {
+        const error = new Error('Payment not captured');
         error.statusCode = 400;
         throw error;
     }
 
-    if (razorpayPayment.status !== 'captured') {
-        const error = new Error('Payment has not been captured');
-        error.statusCode = 400;
+    const course = await Course.findById(payment.course);
+
+    if (!course) {
+        const error = new Error('Course not found');
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const existingEnrollment = await Enrollment.findOne({
+            student: payment.student,
+            course: payment.course,
+        });
+
+    if (existingEnrollment) {
+        const error = new Error('Student already enrolled');
+        error.statusCode = 409;
         throw error;
     }
 
@@ -177,24 +171,49 @@ const verifyPayment = async (validatedParams, validatedBody, authenticatedUser) 
 
         await payment.save({ session });
 
-        const createdEnrollments = await Enrollment.create(
-            [
+        const createdEnrollment = await Enrollment.create(
+                [
+                    {
+                        student: payment.student,
+                        course: payment.course,
+                    }
+                ],
                 {
-                    student: payment.student,
-                    course: payment.course,
-                },
-            ],
-            { session }
-        );
-
-        enrollment = createdEnrollments[0];
-
+                    session,
+                }
+            );
+        enrollment = createdEnrollment[0];
         await session.commitTransaction();
-    } catch (err) {
+    } catch(error) {
         await session.abortTransaction();
-        throw err;
+        throw error;
     } finally {
         await session.endSession();
+    }
+
+    await notificationService.createNotification({
+        recipient: payment.student,
+        title: 'Payment Successful',
+        message: `Your payment for ${course.title} was successful.`,
+        type: 'payment',
+        referenceId: payment._id,
+    });
+
+    const student = await User.findById(payment.student);
+
+    try {
+        await emailService.sendPaymentReceiptEmail(
+            student.email,
+            student.name,
+            payment._id,
+            payment.amount,
+            course.title
+        );
+    } catch(error) {
+        console.log(
+            'Payment email failed:',
+            error.message
+        );
     }
 
     return {

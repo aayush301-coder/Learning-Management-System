@@ -102,12 +102,15 @@ const courseSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-
 courseSchema.index({
     instructor: 1,
     status: 1,
 });
 
+courseSchema.index({
+    title: 'text',
+    description: 'text',
+});
 
 const Course = mongoose.model('Course', courseSchema);
 

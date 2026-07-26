@@ -1,28 +1,45 @@
 const User = require('../users/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const emailService = require('../../services/email.service');
 
 const register = async (userData) => {
-    if(await User.findOne({email: userData.email})) {
+    if (await User.findOne({ email: userData.email })) {
         const error = new Error('Email already exists');
-        error.status = 400;
+        error.statusCode = 400;
         throw error;
     }
-    const { confirmPassword: _, ...userDataWithoutConfirmPassword } = userData;
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(userDataWithoutConfirmPassword.password, salt);
-
-    const hashedUserData = {
+    const {
+        confirmPassword: _,
+        ...userDataWithoutConfirmPassword
+    } = userData;
+    const hashedPassword = await bcrypt.hash(
+        userDataWithoutConfirmPassword.password,
+        10
+    );
+    const userDocument = await User.create({
         ...userDataWithoutConfirmPassword,
         password: hashedPassword,
-    };
+    });
 
-    const userDocument = await User.create(hashedUserData);
-        const safeUser = userDocument.toObject();
-        delete safeUser.password;
-        return safeUser;
-}
+    const safeUser = userDocument.toObject();
+    delete safeUser.password;
+
+    try {
+        await emailService.sendWelcomeEmail(
+            userDocument.email,
+            userDocument.name
+        );
+    } catch (error) {
+        console.log(
+            'Welcome email failed:',
+            error.message
+        );
+    }
+
+    return safeUser;
+};
 
 const login = async (userData) => {
     const userDocument = await User.findOne({email: userData.email});

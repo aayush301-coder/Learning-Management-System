@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Review = require('./review.model');
 const Course = require('../courses/course.model');
 const Enrollment = require('../enrollments/enrollment.model');
+const notificationService = require('../notifications/notification.service');
 
 
 const updateCourseRating = async (courseId) => {
@@ -92,7 +93,14 @@ const createReview = async (validatedData, authenticatedUser) => {
         rating,
         review,
     });
-
+    
+    await notificationService.createNotification({
+        recipient: course.instructor,
+        title: 'New Course Review',
+        message: `A student reviewed your course ${course.title}`,
+        type: 'review',
+        referenceId: review._id,
+});
 
     await updateCourseRating(courseId);
 

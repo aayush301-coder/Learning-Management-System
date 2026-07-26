@@ -5,12 +5,13 @@ const validateMiddleware = require('../../middlewares/validate.middleware');
 const paymentController = require('./payment.controller');
 const { createPaymentParamsSchema, verifyPaymentParamsSchema, verifyPaymentBodySchema } = require('./payment.validation');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
+const { paymentLimiter } = require('../../middlewares/rateLimiter.middleware');
 
 // Create Payment Order
-router.post('/create/:courseId', authMiddleware, authorizeMiddleware('student'), validateMiddleware(createPaymentParamsSchema, 'params'), paymentController.createPaymentOrder);
+router.post('/create/:courseId', authMiddleware, authorizeMiddleware('student'), paymentLimiter, validateMiddleware(createPaymentParamsSchema, 'params'), paymentController.createPaymentOrder);
 
 //Verify Payment
-router.post('/verify/:paymentId', authMiddleware, authorizeMiddleware('student'), validateMiddleware(verifyPaymentParamsSchema, 'params'), validateMiddleware(verifyPaymentBodySchema, 'body'), paymentController.verifyPayment);
+router.post('/verify/:paymentId', authMiddleware, authorizeMiddleware('student'), paymentLimiter, validateMiddleware(verifyPaymentParamsSchema, 'params'), validateMiddleware(verifyPaymentBodySchema, 'body'), paymentController.verifyPayment);
 
 //Get My Payments
 router.get('/me', authMiddleware, authorizeMiddleware('student'), paymentController.getMyPayments);

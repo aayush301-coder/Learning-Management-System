@@ -16,14 +16,56 @@ const updateCourseSchema = createCourseSchema.partial().refine((data) => Object.
     });
 
 const getAllCoursesSchema = z.object({
-    page: z.coerce.number().min(1, 'Page number must be positive').default(1),
-    limit: z.coerce.number().min(1, 'Limit must be at least 1').max(100, 'Limit cannot exceed 100').default(10),
-    search: z.preprocess((value) => value === '' ? undefined : value, z.string().trim().max(100, 'Search query cannot exceed 100 characters').optional()),
-    category: z.enum(courseCategories, { message: 'Course category is not valid' }).optional(),
-    level: z.enum(courseLevels, { message: 'Course level is not valid' }).optional(),
-    language: z.enum(courseLanguages, { message: 'Course language is not valid' }).optional(),
-    sortBy: z.enum(courseSortFields, { message: 'Invalid sort field' }).default('createdAt'),
-    sortOrder: z.enum(['asc', 'desc'], { message: 'Invalid sort order' }).default('desc'),
+    page: z.coerce
+        .number()
+        .min(1, 'Page number must be positive')
+        .default(1),
+
+    limit: z.coerce
+        .number()
+        .min(1, 'Limit must be at least 1')
+        .max(100, 'Limit cannot exceed 100')
+        .default(10),
+
+    search: z.preprocess(
+        (value) => value === '' ? undefined : value,
+        z.string()
+            .trim()
+            .max(100, 'Search query cannot exceed 100 characters')
+            .optional()
+    ),
+
+    category: z.enum(courseCategories, {
+        message: 'Course category is not valid',
+    }).optional(),
+
+    level: z.enum(courseLevels, {
+        message: 'Course level is not valid',
+    }).optional(),
+
+    language: z.enum(courseLanguages, {
+        message: 'Course language is not valid',
+    }).optional(),
+
+    minPrice: z.coerce
+        .number()
+        .min(0, 'Minimum price cannot be negative')
+        .optional(),
+
+    maxPrice: z.coerce
+        .number()
+        .min(0, 'Maximum price cannot be negative')
+        .optional(),
+
+    sortBy: z.enum(courseSortFields, {
+        message: 'Invalid sort field',
+    })
+    .default('createdAt'),
+
+    sortOrder: z.enum(['asc', 'desc'], {
+        message: 'Invalid sort order',
+    })
+    .default('desc'),
 });
 
 const getMyCoursesSchema = z.object({
