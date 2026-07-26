@@ -33,7 +33,35 @@ const {
 } = require('./course.validation');
 
 
-// Create Course
+
+/**
+ * @swagger
+ * tags:
+ *   name: Courses
+ *   description: Course management APIs
+ */
+
+
+/**
+ * @swagger
+ * /courses:
+ *   post:
+ *     summary: Create a new course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ */
 router.post(
     '/',
     authMiddleware,
@@ -43,7 +71,36 @@ router.post(
 );
 
 
-// Get All Courses
+
+/**
+ * @swagger
+ * /courses:
+ *   get:
+ *     summary: Get all courses
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *
+ *     responses:
+ *       200:
+ *         description: Courses retrieved successfully
+ */
 router.get(
     '/',
     authMiddleware,
@@ -53,7 +110,20 @@ router.get(
 );
 
 
-// Get Instructor Courses
+
+/**
+ * @swagger
+ * /courses/my:
+ *   get:
+ *     summary: Get instructor courses
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     responses:
+ *       200:
+ *         description: Instructor courses retrieved successfully
+ */
 router.get(
     '/my',
     authMiddleware,
@@ -63,7 +133,27 @@ router.get(
 );
 
 
-// Get Course By ID
+
+/**
+ * @swagger
+ * /courses/{courseId}:
+ *   get:
+ *     summary: Get course by ID
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *
+ *     responses:
+ *       200:
+ *         description: Course retrieved successfully
+ */
 router.get(
     '/:courseId',
     authMiddleware,
@@ -73,7 +163,16 @@ router.get(
 );
 
 
-// Update Course
+
+/**
+ * @swagger
+ * /courses/{courseId}:
+ *   patch:
+ *     summary: Update course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId',
     authMiddleware,
@@ -84,7 +183,16 @@ router.patch(
 );
 
 
-// Delete Course
+
+/**
+ * @swagger
+ * /courses/{courseId}:
+ *   delete:
+ *     summary: Delete course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.delete(
     '/:courseId',
     authMiddleware,
@@ -94,7 +202,16 @@ router.delete(
 );
 
 
-// Submit Course For Review
+
+/**
+ * @swagger
+ * /courses/{courseId}/submit-review:
+ *   patch:
+ *     summary: Submit course for review
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId/submit-review',
     authMiddleware,
@@ -104,7 +221,16 @@ router.patch(
 );
 
 
-// Publish Course
+
+/**
+ * @swagger
+ * /courses/{courseId}/publish:
+ *   patch:
+ *     summary: Publish course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId/publish',
     authMiddleware,
@@ -114,7 +240,16 @@ router.patch(
 );
 
 
-// Unpublish Course
+
+/**
+ * @swagger
+ * /courses/{courseId}/unpublish:
+ *   patch:
+ *     summary: Unpublish course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId/unpublish',
     authMiddleware,
@@ -124,7 +259,16 @@ router.patch(
 );
 
 
-// Archive Course
+
+/**
+ * @swagger
+ * /courses/{courseId}/archive:
+ *   patch:
+ *     summary: Archive course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId/archive',
     authMiddleware,
@@ -134,7 +278,16 @@ router.patch(
 );
 
 
-// Restore Course
+
+/**
+ * @swagger
+ * /courses/{courseId}/restore:
+ *   patch:
+ *     summary: Restore archived course
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:courseId/restore',
     authMiddleware,

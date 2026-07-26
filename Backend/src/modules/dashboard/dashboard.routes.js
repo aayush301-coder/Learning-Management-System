@@ -3,7 +3,15 @@ const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const dashboardController = require('./dashboard.controller');
 
-// Dashboard statistics
+/**
+ * @swagger
+ * /dashboard/stats:
+ *   get:
+ *     summary: Get dashboard statistics
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/stats',
     authMiddleware,
@@ -11,7 +19,15 @@ router.get(
     dashboardController.getStats
 );
 
-// Popular courses
+/**
+ * @swagger
+ * /dashboard/popular-courses:
+ *   get:
+ *     summary: Get popular courses
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/popular-courses',
     authMiddleware,
@@ -19,7 +35,15 @@ router.get(
     dashboardController.getPopularCourses
 );
 
-// Revenue analytics
+/**
+ * @swagger
+ * /dashboard/revenue:
+ *   get:
+ *     summary: Get revenue analytics
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/revenue',
     authMiddleware,
@@ -27,7 +51,15 @@ router.get(
     dashboardController.getRevenueAnalytics
 );
 
-// Recent activity
+/**
+ * @swagger
+ * /dashboard/activity:
+ *   get:
+ *     summary: Get recent activity
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/activity',
     authMiddleware,

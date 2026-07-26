@@ -1,26 +1,35 @@
 const router = require('express').Router();
-
 const authMiddleware = require('../../middlewares/auth.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
-
-const notificationController =
-    require('./notification.controller');
-
-
+const notificationController = require('./notification.controller');
 const {
     notificationIdSchema,
 } = require('./notification.validation');
 
-
-// Get my notifications
+/**
+ * @swagger
+ * /notifications:
+ *   get:
+ *     summary: Get My Notifications for a student
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/',
     authMiddleware,
     notificationController.getMyNotifications
 );
 
-
-// Mark one notification read
+/**
+ * @swagger
+ * /notifications/:notificationId/read:
+ *   patch:
+ *     summary: Mark a notification for a student as read
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:notificationId/read',
     authMiddleware,
@@ -31,16 +40,30 @@ router.patch(
     notificationController.markNotificationAsRead
 );
 
-
-// Mark all read
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   patch:
+ *     summary: Mark My Notifications for a student as read
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/read-all',
     authMiddleware,
     notificationController.markAllNotificationsAsRead
 );
 
-
-// Delete notification
+/**
+ * @swagger
+ * /notifications/:notificationId:
+ *   delete:
+ *     summary: Delete a notification for a student
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.delete(
     '/:notificationId',
     authMiddleware,
@@ -50,6 +73,5 @@ router.delete(
     ),
     notificationController.deleteNotification
 );
-
 
 module.exports = router;

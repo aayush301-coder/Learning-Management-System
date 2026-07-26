@@ -7,13 +7,37 @@ const { createPaymentParamsSchema, verifyPaymentParamsSchema, verifyPaymentBodyS
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const { paymentLimiter } = require('../../middlewares/rateLimiter.middleware');
 
-// Create Payment Order
+/**
+ * @swagger
+ * /payments/create/:courseId:
+ *   post:
+ *     summary: Create payment order for a course
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.post('/create/:courseId', authMiddleware, authorizeMiddleware('student'), paymentLimiter, validateMiddleware(createPaymentParamsSchema, 'params'), paymentController.createPaymentOrder);
 
-//Verify Payment
+/**
+ * @swagger
+ * /payments/verify/:paymentId:
+ *   post:
+ *     summary: Verify Payment order for a course
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.post('/verify/:paymentId', authMiddleware, authorizeMiddleware('student'), paymentLimiter, validateMiddleware(verifyPaymentParamsSchema, 'params'), validateMiddleware(verifyPaymentBodySchema, 'body'), paymentController.verifyPayment);
 
-//Get My Payments
+/**
+ * @swagger
+ * /payments/me:
+ *   get:
+ *     summary: Get My Payments for a student
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get('/me', authMiddleware, authorizeMiddleware('student'), paymentController.getMyPayments);
 
 module.exports = router;

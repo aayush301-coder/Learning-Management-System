@@ -6,13 +6,37 @@ const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
 const { getCourseByIdSchema } = require('./enrollment.validation');
 
-// Enroll in a course
+/**
+ * @swagger
+ * /courses/{courseId}/enroll:
+ *   post:
+ *     summary: Enroll in a course
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.post('/courses/:courseId/enroll', authMiddleware, authorizeMiddleware('student'), validateMiddleware(getCourseByIdSchema, 'params'), enrollmentController.enrollInCourse);
 
-// Get my enrollments
+/**
+ * @swagger
+ * /enrollments/me:
+ *   get:
+ *     summary: Get my enrollments
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get('/enrollments/me', authMiddleware, authorizeMiddleware('student'), enrollmentController.getMyEnrollments);
 
-// Cancel an enrollment
+/**
+ * @swagger
+ * /enrollments/{enrollmentId}:
+ *   delete:
+ *     summary: Cancel an enrollment
+ *     tags: [Enrollments]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.delete('/courses/:courseId/enroll', authMiddleware, authorizeMiddleware('student'), validateMiddleware(getCourseByIdSchema, 'params'), enrollmentController.cancelEnrollment);
 
 module.exports = router;

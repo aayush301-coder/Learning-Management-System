@@ -8,6 +8,15 @@ const {
     courseIdParamsSchema,
 } = require('./wishlist.validation');
 
+/**
+ * @swagger
+ * /wishlists/{courseId}:
+ *   post:
+ *     summary: Add course to wishlist
+ *     tags: [Wishlists]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.post(
     '/:courseId',
     authMiddleware,
@@ -16,6 +25,15 @@ router.post(
     wishlistController.addToWishlist
 );
 
+/**
+ * @swagger
+ * /wishlists/{courseId}:
+ *   delete:
+ *     summary: Remove course from wishlist
+ *     tags: [Wishlists]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.delete(
     '/:courseId',
     authMiddleware,
@@ -24,6 +42,15 @@ router.delete(
     wishlistController.removeFromWishlist
 );
 
+/**
+ * @swagger
+ * /wishlists/me:
+ *   get:
+ *     summary: Get student's wishlist
+ *     tags: [Wishlists]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/me',
     authMiddleware,

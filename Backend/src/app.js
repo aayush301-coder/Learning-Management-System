@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const corsOptions = require('./config/cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
+const logger = require('./config/logger');
 const authRouter = require('./modules/auth/auth.routes');
 const courseRouter = require('./modules/courses/course.routes');
 const sectionRouter = require('./modules/sections/section.routes');
@@ -16,14 +18,32 @@ const dashboardRouter = require('./modules/dashboard/dashboard.routes');
 const uploadRouter = require('./modules/uploads/upload.routes');
 const errorHandler = require('./middlewares/error.middleware');
 const { apiLimiter } = require('./middlewares/rateLimiter.middleware');
+const requestLogger = require('./middlewares/requestLogger.middleware');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 
 const app = express();
+
 app.use(cors(corsOptions));
 app.use(helmet());
+
+app.use(
+    morgan('combined', {
+        stream: {
+            write: (message) => {
+                logger.info(message.trim());
+            },
+        },
+    })
+);
+
 app.use(express.json());
 app.use(express.urlencoded({
     extended: true,
 }));
+
+app.use(requestLogger);
+
 app.use(apiLimiter);
 
 //Health Check Route
@@ -47,6 +67,8 @@ app.use('/api/v1/wishlists', wishlistRouter);
 app.use('/api/v1/payments', paymentRouter);
 app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/uploads', uploadRouter);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //404 Route Handler
 app.use((req, res) => {

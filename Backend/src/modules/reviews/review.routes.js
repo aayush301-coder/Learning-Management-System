@@ -11,8 +11,15 @@ const {
     reviewIdParamsSchema,
 } = require('./review.validation');
 
-//Create Review
-//POST /api/v1/reviews
+/**
+ * @swagger
+ * /reviews:
+ *   post:
+ *     summary: Create review
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.post(
     '/',
     authMiddleware,
@@ -21,8 +28,15 @@ router.post(
     reviewController.createReview
 );
 
-//Update Review
-//PATCH /api/v1/reviews/:reviewId
+/**
+ * @swagger
+ * /reviews/{reviewId}:
+ *   patch:
+ *     summary: Update review
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
     '/:reviewId',
     authMiddleware,
@@ -32,8 +46,15 @@ router.patch(
     reviewController.updateReview
 );
 
-//Delete Review
-//DELETE /api/v1/reviews/:reviewId
+/**
+ * @swagger
+ * /reviews/{reviewId}:
+ *   delete:
+ *     summary: Delete review
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.delete(
     '/:reviewId',
     authMiddleware,
@@ -42,16 +63,30 @@ router.delete(
     reviewController.deleteReview
 );
 
-//Get Course Reviews
-//GET /api/v1/reviews/course/:courseId
+/**
+ * @swagger
+ * /reviews/course/{courseId}:
+ *   get:
+ *     summary: Get course reviews
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/course/:courseId',
     validateMiddleware(courseReviewsParamsSchema, 'params'),
     reviewController.getCourseReviews
 );
 
-//Get My Reviews
-//GET /api/v1/reviews/my-reviews
+/**
+ * @swagger
+ * /reviews/my-reviews:
+ *   get:
+ *     summary: Get student's reviews
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.get(
     '/my-reviews',
     authMiddleware,

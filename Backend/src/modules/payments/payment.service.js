@@ -1,4 +1,4 @@
-const Razorpay = require('razorpay');
+const razorpay = require('../../config/razorpay');
 const crypto = require('crypto');
 const Payment = require('./payment.model');
 const Course = require('../courses/course.model');
@@ -8,10 +8,6 @@ const emailService = require('../../services/email.service');
 const User = require('../users/user.model');
 const mongoose = require('mongoose');
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
 const createPaymentOrder = async (validatedParams, authenticatedUser) => {
     const { courseId } = validatedParams;
