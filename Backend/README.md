@@ -17,9 +17,9 @@ A production-ready backend API for a Learning Management System built using the 
 
 Supported roles:
 
-* Admin
-* Instructor
 * Student
+* Instructor
+* Admin
 
 ---
 
