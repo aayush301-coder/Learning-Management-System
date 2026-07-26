@@ -123,7 +123,16 @@ router.post('/login', authLimiter, validateMiddleware(loginSchema), login);
  *       403:
  *         description: Forbidden access
  */
-router.get('/me', authMiddleware, authorizeMiddleware('student','admin'), getCurrentUser);
+router.get(
+    '/me',
+    authMiddleware,
+    authorizeMiddleware(
+        'student',
+        'instructor',
+        'admin'
+    ),
+    getCurrentUser
+);
 
 
 module.exports = router;

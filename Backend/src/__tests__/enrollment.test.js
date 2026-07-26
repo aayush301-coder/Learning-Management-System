@@ -1,126 +1,384 @@
 const request = require('supertest');
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 
-const app = require('../../app');
+const app = require('../app');
 
 const User = require('../modules/users/user.model');
 const Course = require('../modules/courses/course.model');
+const Enrollment = require('../modules/enrollments/enrollment.model');
 
-let mongoServer;
-let instructorToken;
+
 let studentToken;
 let courseId;
 
-beforeAll(async()=>{
 
 
-    mongoServer = await MongoMemoryServer.create();
-
-
-    await mongoose.connect(
-        mongoServer.getUri()
-    );
-
-
-    const instructor = await request(app)
-        .post('/api/v1/auth/register')
-        .send({
-            name:'Instructor',
-            email:'instructor@test.com',
-            password:'password123',
-            confirmPassword:'password123',
-            role:'instructor',
-        });
-
-
-    const instructorLogin = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-            email:'instructor@test.com',
-            password:'password123',
-        });
-
-
-    instructorToken =
-        instructorLogin.body.data.token;
-
+const createUser = async (role, email) => {
 
 
     await request(app)
         .post('/api/v1/auth/register')
         .send({
-            name:'Student',
-            email:'student@test.com',
-            password:'password123',
-            confirmPassword:'password123',
-            role:'student',
+
+            name:
+                role === 'student'
+                    ? 'Student User'
+                    : 'Instructor User',
+
+            email,
+
+            password:
+                'password123',
+
+            confirmPassword:
+                'password123',
+
+            role,
+
         });
 
 
-    const studentLogin = await request(app)
-        .post('/api/v1/auth/login')
-        .send({
-            email:'student@test.com',
-            password:'password123',
-        });
+
+    const login =
+        await request(app)
+            .post('/api/v1/auth/login')
+            .send({
+
+                email,
+
+                password:
+                    'password123',
+
+            });
+
+
+
+    return login.body.data.accessToken;
+
+};
+
+
+
+
+
+
+const createPublishedCourse = async () => {
+
+
+    const instructorToken =
+        await createUser(
+            'instructor',
+            `instructor_${Date.now()}@test.com`
+        );
+
+
+
+    const response =
+        await request(app)
+            .post('/api/v1/courses')
+            .set(
+                'Authorization',
+                `Bearer ${instructorToken}`
+            )
+            .send({
+
+                title:
+                    'MERN Course',
+
+                description:
+                    'Complete MERN Course',
+
+                category:
+                    'web_development',
+
+                level:
+                    'beginner',
+
+                language:
+                    'english',
+
+                price:
+                    499,
+
+            });
+
+
+
+    const course =
+        response.body.data;
+
+
+
+    await Course.findByIdAndUpdate(
+        course._id,
+        {
+            status:'published'
+        }
+    );
+
+
+
+    return course._id;
+
+};
+
+
+
+
+
+
+beforeEach(async()=>{
+
+
+    const unique =
+        Date.now();
+
 
 
     studentToken =
-        studentLogin.body.data.token;
+        await createUser(
+            'student',
+            `student_${unique}@test.com`
+        );
 
-
-
-    const course = await request(app)
-        .post('/api/v1/courses')
-        .set(
-            'Authorization',
-            `Bearer ${instructorToken}`
-        )
-        .send({
-            title:'Backend Development',
-            description:'Complete backend course',
-            category:'web_development',
-            level:'beginner',
-            language:'english',
-            price:500,
-        });
 
 
     courseId =
-        course.body.data._id;
+        await createPublishedCourse();
+
 
 
 });
 
 
 
-afterAll(async()=>{
 
-    await User.deleteMany({});
+
+
+afterEach(async()=>{
+
+
+    await Enrollment.deleteMany({});
+
     await Course.deleteMany({});
 
-    await mongoose.disconnect();
+    await User.deleteMany({});
 
-    await mongoServer.stop();
 
 });
+
+
+
+
 
 
 
 describe('Enrollment Module',()=>{
 
 
-    test('should prevent enrollment without published course',async()=>{
+
+    test('should enroll student into course', async()=>{
 
 
-        const response = await request(app)
-            .post(`/api/v1/enrollments/${courseId}`)
+        const response =
+            await request(app)
+                .post(
+                    `/api/v1/courses/${courseId}/enroll`
+                )
+                .set(
+                    'Authorization',
+                    `Bearer ${studentToken}`
+                );
+
+
+
+        expect(response.statusCode)
+            .toBe(201);
+
+
+
+        expect(response.body.success)
+            .toBe(true);
+
+
+
+        const enrollment =
+            await Enrollment.findOne({
+                course:courseId
+            });
+
+
+
+        expect(enrollment)
+            .toBeTruthy();
+
+
+    });
+
+
+
+
+
+
+
+    test('should get my enrollments', async()=>{
+
+
+        await request(app)
+            .post(
+                `/api/v1/courses/${courseId}/enroll`
+            )
             .set(
                 'Authorization',
                 `Bearer ${studentToken}`
             );
+
+
+
+        const response =
+            await request(app)
+                .get('/api/v1/enrollments/me')
+                .set(
+                    'Authorization',
+                    `Bearer ${studentToken}`
+                );
+
+
+
         expect(response.statusCode)
-            .toBe(400 || 403 || 409);
+            .toBe(200);
+
+
+
+        expect(response.body.success)
+            .toBe(true);
+
+
+
+        expect(response.body.data)
+            .toHaveLength(1);
+
+
+    });
+
+
+
+
+
+
+
+
+    test('should not enroll twice', async()=>{
+
+
+        await request(app)
+            .post(
+                `/api/v1/courses/${courseId}/enroll`
+            )
+            .set(
+                'Authorization',
+                `Bearer ${studentToken}`
+            );
+
+
+
+        const response =
+            await request(app)
+                .post(
+                    `/api/v1/courses/${courseId}/enroll`
+                )
+                .set(
+                    'Authorization',
+                    `Bearer ${studentToken}`
+                );
+
+
+
+        expect(response.statusCode)
+            .toBe(409);
+
+
+
+        expect(response.body.success)
+            .toBe(false);
+
+
+    });
+
+
+
+
+
+
+
+
+    test('should cancel enrollment', async()=>{
+
+
+        await request(app)
+            .post(
+                `/api/v1/courses/${courseId}/enroll`
+            )
+            .set(
+                'Authorization',
+                `Bearer ${studentToken}`
+            );
+
+
+
+        const response =
+            await request(app)
+                .delete(
+                    `/api/v1/courses/${courseId}/enroll`
+                )
+                .set(
+                    'Authorization',
+                    `Bearer ${studentToken}`
+                );
+
+
+
+        expect(response.statusCode)
+            .toBe(200);
+
+
+
+        const enrollment =
+            await Enrollment.findOne({
+                course:courseId
+            });
+
+
+
+        expect(enrollment)
+            .toBeNull();
+
+
+    });
+
+
+
+
+
+
+
+
+    test('should reject enrollment without authentication', async()=>{
+
+
+        const response =
+            await request(app)
+                .post(
+                    `/api/v1/courses/${courseId}/enroll`
+                );
+
+
+
+        expect(response.statusCode)
+            .toBe(401);
+
+
+
+        expect(response.body.success)
+            .toBe(false);
     });
 });

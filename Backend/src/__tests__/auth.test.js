@@ -7,7 +7,6 @@ const User = require('../modules/users/user.model');
 
 describe('Auth Module', () => {
 
-
     test('should register a new user', async () => {
 
         const response = await request(app)
@@ -255,8 +254,5 @@ describe('Auth Module', () => {
 
         expect(response.body.success)
             .toBe(false);
-
     });
-
-
 });
