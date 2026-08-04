@@ -1,162 +1,108 @@
-const User = require('../users/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+const User = require('../users/user.model');
 
-const register = async(userData)=>{
-
-
-    const existingUser =
-        await User.findOne({
-            email:userData.email
-        });
+const SALT_ROUNDS = 10;
 
 
+const generateToken = (user) => {
 
-    if(existingUser){
+    return jwt.sign(
+        { id: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+    );
 
-        const error=new Error(
-            "Email already exists"
-        );
+};
 
-        error.statusCode=400;
+
+const register = async (userData) => {
+
+    const existingUser = await User.findOne({
+        email: userData.email,
+    });
+
+    if (existingUser) {
+
+        const error = new Error('An account with this email already exists');
+
+        error.statusCode = 409;
 
         throw error;
 
     }
 
+    const hashedPassword = await bcrypt.hash(userData.password, SALT_ROUNDS);
 
+    const user = await User.create({
 
-    const {
-        confirmPassword,
-        ...data
-    } = userData;
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.role,
 
+    });
 
-
-    const hashedPassword =
-        await bcrypt.hash(
-            data.password,
-            10
-        );
-
-
-
-    const user =
-        await User.create({
-
-            ...data,
-
-            password:hashedPassword
-
-        });
-
-
-
-    const safeUser =
-        user.toObject();
-
+    const safeUser = user.toObject();
 
     delete safeUser.password;
-
 
     return safeUser;
 
 };
 
 
+const login = async (userData) => {
 
+    // password has `select: false` on the schema, so it must be
+    // explicitly requested here for the bcrypt.compare check below.
+    const user = await User.findOne({
+        email: userData.email,
+    }).select('+password');
 
+    if (!user) {
 
-const login = async(userData)=>{
+        const error = new Error('Invalid email or password');
 
-
-    const user =
-        await User.findOne({
-            email:userData.email
-        });
-
-
-
-    if(!user){
-
-        const error=new Error(
-            "User not found"
-        );
-
-        error.statusCode=400;
+        error.statusCode = 401;
 
         throw error;
 
     }
 
+    const isPasswordValid = await bcrypt.compare(userData.password, user.password);
 
+    if (!isPasswordValid) {
 
-    const valid =
-        await bcrypt.compare(
-            userData.password,
-            user.password
-        );
+        const error = new Error('Invalid email or password');
 
-
-
-    if(!valid){
-
-        const error=new Error(
-            "Invalid password"
-        );
-
-        error.statusCode=400;
+        error.statusCode = 401;
 
         throw error;
 
     }
 
+    const accessToken = generateToken(user);
 
-
-
-    const token =
-        jwt.sign(
-
-            {
-                id:user._id,
-                role:user.role
-            },
-
-            process.env.JWT_SECRET,
-
-            {
-                expiresIn:
-                process.env.JWT_EXPIRES_IN
-            }
-
-        );
-
-
-
-
-    const safeUser =
-        user.toObject();
-
+    const safeUser = user.toObject();
 
     delete safeUser.password;
 
-
-
-    return {
-
-        accessToken:token,
-
-        user:safeUser
-
-    };
-
+    return { accessToken, user: safeUser };
 
 };
 
 
+const getCurrentUser = async (authenticatedUser) => {
 
-module.exports={
+    return authenticatedUser;
+
+};
+
+
+module.exports = {
     register,
-    login
+    login,
+    getCurrentUser,
 };

@@ -1,39 +1,56 @@
 const jwt = require('jsonwebtoken');
+
 const User = require('../modules/users/user.model');
 
+
 const authMiddleware = async (req, res, next) => {
-    const authHeader = req.get('Authorization');
-    if(!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-            success: false,
-            message: 'No Token Provided',
-        })
-    }
-    const token = authHeader.split(' ')[1];
-    if(!token) {
-        return res.status(401).json({
-            success: false,
-            message: 'No Token Provided',
-        })
-    }
+
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findById(decoded.id).select('-password');
-        if(!user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid authentication',
-            })
+
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+
+            const error = new Error('Not authenticated');
+
+            error.statusCode = 401;
+
+            throw error;
+
         }
+
+        const token = authHeader.split(' ')[1];
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const user = await User.findById(decoded.id).select('-password');
+
+        if (!user) {
+
+            const error = new Error('User no longer exists');
+
+            error.statusCode = 401;
+
+            throw error;
+
+        }
+
         req.user = user;
+
         next();
+
     }
     catch (error) {
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid authentication',
-        })
+
+        error.statusCode = error.statusCode || 401;
+
+        error.message = error.message || 'Not authenticated';
+
+        next(error);
+
     }
-}
+
+};
+
 
 module.exports = authMiddleware;

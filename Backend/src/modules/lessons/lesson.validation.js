@@ -1,33 +1,66 @@
 const { z } = require('zod');
 
+
 const createLessonSchema = z.object({
-    title: z.string().min(1).trim(),
-    description: z.string().optional(),
-    videoUrl: z.string().trim().optional(),
-    duration: z.number().int().nonnegative().optional(),
-    isPreview: z.boolean().optional(),
+
+    title: z
+        .string()
+        .trim()
+        .min(3, 'Title must be at least 3 characters')
+        .max(150, 'Title cannot exceed 150 characters'),
+
+    description: z
+        .string()
+        .trim()
+        .optional(),
+
+    videoUrl: z
+        .string()
+        .trim()
+        .url('Invalid video URL')
+        .optional(),
+
+    duration: z.coerce
+        .number()
+        .min(0, 'Duration cannot be negative')
+        .default(0),
+
+    order: z.coerce
+        .number()
+        .min(0, 'Order cannot be negative')
+        .default(0),
+
+    isPreview: z.coerce
+        .boolean()
+        .default(false),
+
 });
 
-const updateLessonSchema = z.object({
-    title: z.string().min(1).trim().optional(),
-    description: z.string().optional(),
-    order: z.number().int().positive().optional(),
-    videoUrl: z.string().trim().url().optional(),
-    duration: z.number().int().nonnegative().optional(),
-    isPreview: z.boolean().optional(),
-}).refine(data => Object.keys(data).length > 0);
 
-const sectionIdSchema = z.object({
-    sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+const updateLessonSchema = createLessonSchema.partial();
+
+
+const sectionIdParamsSchema = z.object({
+
+    sectionId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid section id'),
+
 });
 
-const lessonIdSchema = z.object({
-    lessonId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+
+const lessonIdParamsSchema = z.object({
+
+    lessonId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid lesson id'),
+
 });
+
 
 module.exports = {
     createLessonSchema,
     updateLessonSchema,
-    sectionIdSchema,
-    lessonIdSchema
+    sectionIdParamsSchema,
+    lessonIdParamsSchema,
 };

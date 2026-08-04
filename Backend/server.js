@@ -1,76 +1,37 @@
-require('dotenv').config();
-
 const dns = require('dns');
 dns.setServers(['8.8.8.8', '8.8.4.4']);
 
+require('dotenv').config();
+
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
-const logger = require('./src/config/logger');
+const logger = require('./src/utils/logger');
 
-let server;
+const PORT = process.env.PORT || 3000;
 
-const startServer = async () => {
+
+async function startServer() {
+
     try {
+
         await connectDB();
 
-        server = app.listen(process.env.PORT, () => {
-            logger.info(`Server is running on port ${process.env.PORT}`);
+        app.listen(PORT, () => {
+
+            logger.info(`Okla API server running on port ${PORT}`);
+
         });
+
     }
     catch (error) {
-        logger.error({
-            message: 'Failed to start server',
-            error: error.message,
-            stack: error.stack,
-        });
+
+        logger.error(`Failed to start server: ${error.message}`);
 
         process.exit(1);
+
     }
-};
 
-const shutdownServer = (signal) => {
+}
 
-    logger.info(`${signal} received. Shutting down server...`);
-
-    if(server) {
-        server.close(() => {
-            logger.info('HTTP server closed');
-            process.exit(0);
-        });
-    }
-    else {
-        process.exit(0);
-    }
-};
-
-process.on('uncaughtException', (error) => {
-
-    logger.error({
-        message: 'Uncaught Exception',
-        error: error.message,
-        stack: error.stack,
-    });
-
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (error) => {
-
-    logger.error({
-        message: 'Unhandled Promise Rejection',
-        error: error.message,
-        stack: error.stack,
-    });
-
-    shutdownServer('Unhandled Rejection');
-});
-
-process.on('SIGTERM', () => {
-    shutdownServer('SIGTERM');
-});
-
-process.on('SIGINT', () => {
-    shutdownServer('SIGINT');
-});
 
 startServer();

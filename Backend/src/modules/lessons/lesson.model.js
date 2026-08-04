@@ -1,48 +1,52 @@
 const mongoose = require('mongoose');
 
-const lessonSchema = new mongoose.Schema(
-    {
-        title: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        description: {
-            type: String,
-            trim: true,
-            default: '',
-        },
-        section: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Section',
-            required: true,
-        },
-        order: {
-            type: Number,
-            required: true,
-        },
-        videoUrl: {
-            type: String,
-            trim: true,
-            default: null,
-        },
-        duration: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        isPreview: {
-            type: Boolean,
-            default: false,
-        },
+
+const lessonSchema = new mongoose.Schema({
+
+    title: {
+        type: String,
+        required: true,
+        trim: true,
     },
-    {
-        timestamps: true,
-    }
-);
 
-lessonSchema.index({ section: 1, order: 1 }, { unique: true });
+    description: {
+        type: String,
+        trim: true,
+        default: '',
+    },
 
-const Lesson = mongoose.model('Lesson', lessonSchema);
+    videoUrl: {
+        type: String,
+        trim: true,
+        default: null,
+    },
 
-module.exports = Lesson;
+    section: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Section',
+        required: true,
+        index: true,
+    },
+
+    duration: {
+        type: Number,
+        default: 0,
+    },
+
+    order: {
+        type: Number,
+        default: 0,
+    },
+
+    isPreview: {
+        type: Boolean,
+        default: false,
+    },
+
+},
+{
+    timestamps: true,
+});
+
+
+module.exports = mongoose.model('Lesson', lessonSchema);

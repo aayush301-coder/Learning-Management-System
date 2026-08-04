@@ -1,35 +1,19 @@
 const courseCategories = [
-    'web_development',
-    'mobile_development',
-    'data_science',
-    'artificial_intelligence',
-    'machine_learning',
-    'cyber_security',
-    'cloud_computing',
-    'devops',
-    'programming_languages',
-    'database',
-    'ui_ux_design',
+    'development',
+    'design',
     'business',
     'marketing',
-    'productivity',
-    'programming',
+    'it-and-software',
+    'personal-development',
+    'photography',
+    'music',
 ];
 
-const courseLevels = [
-    'beginner',
-    'intermediate',
-    'advanced',
-];
+const courseLevels = ['beginner', 'intermediate', 'advanced'];
 
-const courseLanguages = [
-    'english',
-    'hindi',
-    'spanish',
-    'french',
-];
+const courseLanguages = ['english', 'hindi', 'spanish', 'french', 'german'];
 
-const courseStatus = [
+const courseStatuses = [
     'draft',
     'pending_review',
     'published',
@@ -37,19 +21,10 @@ const courseStatus = [
     'archived',
 ];
 
-const courseSortFields = [
-    'title',
-    'price',
-    'createdAt',
-    'updatedAt',
-    'averageRating',
-];
-
 
 module.exports = {
     courseCategories,
     courseLevels,
     courseLanguages,
-    courseStatus,
-    courseSortFields,
-}
+    courseStatuses,
+};

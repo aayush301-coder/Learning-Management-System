@@ -1,48 +1,30 @@
 const { z } = require('zod');
 
 
-const objectIdSchema = z
-    .string()
-    .regex(
-        /^[0-9a-fA-F]{24}$/,
-        'Invalid MongoDB ObjectId'
-    );
+const getNotificationsSchema = z.object({
 
+    page: z.coerce.number().min(1).default(1),
 
-const createNotificationSchema = z.object({
-    recipient: objectIdSchema,
+    limit: z.coerce.number().min(1).max(100).default(20),
 
-    title: z
-        .string()
-        .trim()
-        .min(3)
-        .max(150),
+    isRead: z.preprocess(
+        (value) => value === '' ? undefined : value,
+        z.enum(['true', 'false']).optional()
+    ),
 
-    message: z
-        .string()
-        .trim()
-        .min(5)
-        .max(500),
-
-    type: z.enum([
-        'enrollment',
-        'payment',
-        'course',
-        'certificate',
-        'review',
-        'system',
-    ]),
-
-    referenceId: objectIdSchema.optional(),
 });
 
 
-const notificationIdSchema = z.object({
-    notificationId: objectIdSchema,
+const notificationIdParamsSchema = z.object({
+
+    notificationId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid notification id'),
+
 });
 
 
 module.exports = {
-    createNotificationSchema,
-    notificationIdSchema,
+    getNotificationsSchema,
+    notificationIdParamsSchema,
 };

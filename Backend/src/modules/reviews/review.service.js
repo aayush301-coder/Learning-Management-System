@@ -1,229 +1,178 @@
-const mongoose = require('mongoose');
 const Review = require('./review.model');
 const Course = require('../courses/course.model');
 const Enrollment = require('../enrollments/enrollment.model');
-const notificationService = require('../notifications/notification.service');
 
 
-const updateCourseRating = async (courseId) => {
+const recalculateCourseRating = async (courseId) => {
 
-    const result = await Review.aggregate([
-        {
-            $match: {
-                course: new mongoose.Types.ObjectId(courseId),
-            },
-        },
+    const stats = await Review.aggregate([
+
+        { $match: { course: courseId } },
+
         {
             $group: {
                 _id: '$course',
-                averageRating: {
-                    $avg: '$rating',
-                },
-                reviewCount: {
-                    $sum: 1,
-                },
+                averageRating: { $avg: '$rating' },
+                totalReviews: { $sum: 1 },
             },
         },
+
     ]);
 
+    const ratingAverage = stats.length > 0 ? Math.round(stats[0].averageRating * 10) / 10 : 0;
+    const ratingCount = stats.length > 0 ? stats[0].totalReviews : 0;
 
-    if (result.length === 0) {
-        await Course.findByIdAndUpdate(courseId, {
-            averageRating: 0,
-            reviewCount: 0,
-        });
+    await Course.findByIdAndUpdate(courseId, { ratingAverage, ratingCount });
 
-        return;
-    }
-
-
-    await Course.findByIdAndUpdate(courseId, {
-        averageRating: Number(result[0].averageRating.toFixed(1)),
-        reviewCount: result[0].reviewCount,
-    });
 };
 
 
-const createReview = async (validatedData, authenticatedUser) => {
-    const {
-        courseId,
-        rating,
-        review,
-    } = validatedData;
+const getReviewsByCourse = async (validatedParams) => {
 
-    const studentId = authenticatedUser._id;
+    const reviews = await Review.find({ course: validatedParams.courseId })
+        .populate('student', 'name avatar')
+        .sort({ createdAt: -1 });
+
+    return reviews;
+
+};
 
 
-    const course = await Course.findById(courseId);
+const createReview = async (validatedParams, validatedBody, authenticatedUser) => {
+
+    const course = await Course.findById(validatedParams.courseId);
 
     if (!course) {
+
         const error = new Error('Course not found');
+
         error.statusCode = 404;
+
         throw error;
+
     }
 
-
-    const enrolled = await Enrollment.findOne({
-        student: studentId,
-        course: courseId,
+    const isEnrolled = await Enrollment.findOne({
+        student: authenticatedUser._id,
+        course: course._id,
+        status: 'active',
     });
 
-    if (!enrolled) {
-        const error = new Error('You must be enrolled to review this course');
+    if (!isEnrolled) {
+
+        const error = new Error('You must be enrolled in this course to leave a review');
+
         error.statusCode = 403;
+
         throw error;
+
     }
 
-
     const existingReview = await Review.findOne({
-        student: studentId,
-        course: courseId,
+        student: authenticatedUser._id,
+        course: course._id,
     });
 
     if (existingReview) {
-        const error = new Error('You have already reviewed this course');
+
+        const error = new Error('You have already reviewed this course. Please edit your existing review instead.');
+
         error.statusCode = 409;
+
         throw error;
+
     }
 
+    const review = await Review.create({
 
-    const createdReview = await Review.create({
-        student: studentId,
-        course: courseId,
-        rating,
-        review,
+        ...validatedBody,
+        student: authenticatedUser._id,
+        course: course._id,
+
     });
-    
-    await notificationService.createNotification({
-        recipient: course.instructor,
-        title: 'New Course Review',
-        message: `A student reviewed your course ${course.title}`,
-        type: 'review',
-        referenceId: review._id,
-});
 
-    await updateCourseRating(courseId);
+    await recalculateCourseRating(course._id);
 
-    return createdReview;
+    return review;
+
 };
 
 
-const updateReview = async (validatedData, authenticatedUser) => {
-    const {
-        reviewId,
-        rating,
-        review,
-    } = validatedData;
+const findReviewOrThrow = async (reviewId) => {
 
-    const studentId = authenticatedUser._id;
+    const review = await Review.findById(reviewId);
 
+    if (!review) {
 
-    const existingReview = await Review.findById(reviewId);
-
-    if (!existingReview) {
         const error = new Error('Review not found');
+
         error.statusCode = 404;
+
         throw error;
+
     }
 
+    return review;
 
-    if (existingReview.student.toString() !== studentId.toString()) {
-        const error = new Error('You are not allowed to update this review');
+};
+
+
+const updateReview = async (validatedParams, validatedBody, authenticatedUser) => {
+
+    const review = await findReviewOrThrow(validatedParams.reviewId);
+
+    if (review.student.toString() !== authenticatedUser._id.toString()) {
+
+        const error = new Error('You are not authorized to edit this review');
+
         error.statusCode = 403;
+
         throw error;
+
     }
 
+    Object.assign(review, validatedBody);
 
-    if (rating !== undefined) {
-        existingReview.rating = rating;
-    }
+    await review.save();
 
-    if (review !== undefined) {
-        existingReview.review = review;
-    }
+    await recalculateCourseRating(review.course);
 
+    return review;
 
-    await existingReview.save();
-
-    await updateCourseRating(existingReview.course);
-
-    return existingReview;
 };
 
 
 const deleteReview = async (validatedParams, authenticatedUser) => {
-    const {
-        reviewId,
-    } = validatedParams;
 
-    const studentId = authenticatedUser._id;
+    const review = await findReviewOrThrow(validatedParams.reviewId);
 
+    const isOwner = review.student.toString() === authenticatedUser._id.toString();
+    const isAdmin = authenticatedUser.role === 'admin';
 
-    const existingReview = await Review.findById(reviewId);
+    if (!isOwner && !isAdmin) {
 
-    if (!existingReview) {
-        const error = new Error('Review not found');
-        error.statusCode = 404;
-        throw error;
-    }
+        const error = new Error('You are not authorized to delete this review');
 
-
-    if (existingReview.student.toString() !== studentId.toString()) {
-        const error = new Error('You are not allowed to delete this review');
         error.statusCode = 403;
+
         throw error;
+
     }
 
+    const { course } = review;
 
-    const courseId = existingReview.course;
+    await review.deleteOne();
 
-    await Review.findByIdAndDelete(reviewId);
+    await recalculateCourseRating(course);
 
-    await updateCourseRating(courseId);
+    return { reviewId: validatedParams.reviewId };
 
-    return;
-};
-
-
-const getCourseReviews = async (validatedParams) => {
-    const {
-        courseId,
-    } = validatedParams;
-
-
-    const reviews = await Review.find({
-        course: courseId,
-    })
-        .populate('student', 'name avatar')
-        .sort({
-            createdAt: -1,
-        });
-
-
-    return reviews;
-};
-
-
-const getMyReviews = async (authenticatedUser) => {
-    const studentId = authenticatedUser._id;
-
-    const reviews = await Review.find({
-        student: studentId,
-    })
-        .populate('course')
-        .sort({
-            createdAt: -1,
-        });
-
-
-    return reviews;
 };
 
 
 module.exports = {
+    getReviewsByCourse,
     createReview,
     updateReview,
     deleteReview,
-    getCourseReviews,
-    getMyReviews,
 };

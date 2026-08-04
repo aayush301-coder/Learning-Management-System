@@ -1,182 +1,138 @@
 const Lesson = require('./lesson.model');
 const Section = require('../sections/section.model');
 const Course = require('../courses/course.model');
-const { canManageCourse, canViewCourse } = require('../courses/course.service');
 
-const createLesson = async (params, body, user) => {
-    const { sectionId } = params;
-    const { title, description, videoUrl, duration, isPreview } = body;
+
+const findSectionWithCourseOrThrow = async (sectionId) => {
+
     const section = await Section.findById(sectionId);
 
     if (!section) {
+
         const error = new Error('Section not found');
+
         error.statusCode = 404;
+
         throw error;
+
     }
 
     const course = await Course.findById(section.course);
 
     if (!course) {
+
         const error = new Error('Course not found');
+
         error.statusCode = 404;
+
         throw error;
-    }
-    if (!canManageCourse(course, user)) {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
+
     }
 
-    const lastLesson = await Lesson.findOne({ section: sectionId }).sort({ order: -1 });
-    const nextOrder = lastLesson ? lastLesson.order + 1 : 1;
-    const lesson = await Lesson.create({
-        title,
-        description,
-        section: sectionId,
-        order: nextOrder,
-        videoUrl,
-        duration,
-        isPreview,
-    });
-    return lesson;
+    return { section, course };
+
 };
 
-const getLessonsBySection = async (params, user) => {
-    const { sectionId } = params;
-    const section = await Section.findById(sectionId);
 
-    if (!section) {
-        const error = new Error('Section not found');
-        error.statusCode = 404;
-        throw error;
-    }
+const assertCourseOwnerOrAdmin = (course, authenticatedUser) => {
 
-    const course = await Course.findById(section.course);
+    const isOwner = course.instructor.toString() === authenticatedUser._id.toString();
+    const isAdmin = authenticatedUser.role === 'admin';
 
-    if (!course) {
-        const error = new Error('Course not found');
-        error.statusCode = 404;
-        throw error;
-    }
-    if (!canViewCourse(course, user)) {
-        const error = new Error('Not authorized');
+    if (!isOwner && !isAdmin) {
+
+        const error = new Error('You are not authorized to manage this course\'s content');
+
         error.statusCode = 403;
+
         throw error;
+
     }
 
-    const lessons = await Lesson.find({ section: sectionId }).sort({ order: 1 });
+};
+
+
+const getLessonsBySection = async (validatedParams) => {
+
+    const lessons = await Lesson.find({ section: validatedParams.sectionId }).sort({ order: 1, createdAt: 1 });
+
     return lessons;
+
 };
 
-const getLessonById = async (params, user) => {
-    const { lessonId } = params;
+
+const createLesson = async (validatedParams, validatedBody, authenticatedUser) => {
+
+    const { course } = await findSectionWithCourseOrThrow(validatedParams.sectionId);
+
+    assertCourseOwnerOrAdmin(course, authenticatedUser);
+
+    const lesson = await Lesson.create({
+
+        ...validatedBody,
+        section: validatedParams.sectionId,
+
+    });
+
+    return lesson;
+
+};
+
+
+const findLessonOrThrow = async (lessonId) => {
+
     const lesson = await Lesson.findById(lessonId);
 
     if (!lesson) {
+
         const error = new Error('Lesson not found');
+
         error.statusCode = 404;
-        throw error;
-    }
 
-    const section = await Section.findById(lesson.section);
-
-    if (!section) {
-        const error = new Error('Section not found');
-        error.statusCode = 404;
         throw error;
-    }
 
-    const course = await Course.findById(section.course);
-
-    if (!course) {
-        const error = new Error('Course not found');
-        error.statusCode = 404;
-        throw error;
-    }
-    if (!canViewCourse(course, user)) {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
     }
 
     return lesson;
+
 };
 
-const updateLesson = async (params, body, user) => {
-    const { lessonId } = params;
-    const lesson = await Lesson.findById(lessonId);
 
-    if (!lesson) {
-        const error = new Error('Lesson not found');
-        error.statusCode = 404;
-        throw error;
-    }
+const updateLesson = async (validatedParams, validatedBody, authenticatedUser) => {
 
-    const section = await Section.findById(lesson.section);
+    const lesson = await findLessonOrThrow(validatedParams.lessonId);
 
-    if (!section) {
-        const error = new Error('Section not found');
-        error.statusCode = 404;
-        throw error;
-    }
+    const { course } = await findSectionWithCourseOrThrow(lesson.section);
 
-    const course = await Course.findById(section.course);
+    assertCourseOwnerOrAdmin(course, authenticatedUser);
 
-    if (!course) {
-        const error = new Error('Course not found');
-        error.statusCode = 404;
-        throw error;
-    }
-    if (!canManageCourse(course, user)) {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
-    }
+    Object.assign(lesson, validatedBody);
 
-    lesson.set(body);
     await lesson.save();
+
     return lesson;
+
 };
 
-const deleteLesson = async (params, user) => {
-    const { lessonId } = params;
-    const lesson = await Lesson.findById(lessonId);
 
-    if (!lesson) {
-        const error = new Error('Lesson not found');
-        error.statusCode = 404;
-        throw error;
-    }
+const deleteLesson = async (validatedParams, authenticatedUser) => {
 
-    const section = await Section.findById(lesson.section);
+    const lesson = await findLessonOrThrow(validatedParams.lessonId);
 
-    if (!section) {
-        const error = new Error('Section not found');
-        error.statusCode = 404;
-        throw error;
-    }
+    const { course } = await findSectionWithCourseOrThrow(lesson.section);
 
-    const course = await Course.findById(section.course);
-
-    if (!course) {
-        const error = new Error('Course not found');
-        error.statusCode = 404;
-        throw error;
-    }
-    if (!canManageCourse(course, user)) {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
-    }
+    assertCourseOwnerOrAdmin(course, authenticatedUser);
 
     await lesson.deleteOne();
-    return { message: 'Lesson deleted successfully' };
+
+    return { lessonId: validatedParams.lessonId };
+
 };
 
+
 module.exports = {
-    createLesson,
     getLessonsBySection,
-    getLessonById,
+    createLesson,
     updateLesson,
     deleteLesson,
-}
+};

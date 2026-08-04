@@ -1,69 +1,61 @@
-const express = require('express');
-const router = express.Router();
-const progressController = require('./progress.controller');
+const router = require('express').Router();
+
 const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
+
 const {
+    completeLesson,
+    updateLastAccessedLesson,
+    getCourseProgress,
+    getStudentProgress,
+} = require('./progress.controller');
+
+const {
+    courseProgressParamsSchema,
     completeLessonParamsSchema,
     lastAccessedParamsSchema,
     lastAccessedBodySchema,
-    courseProgressParamsSchema,
 } = require('./progress.validation');
 
-/**
- * @swagger
- * /progress/{courseId}:
- *   get:
- *     summary: Get student's progress
- *     tags: [Progress]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:courseId', authMiddleware, authorizeMiddleware('student'), progressController.getStudentProgress);
 
-/**
- * @swagger
- * /progress/{courseId}/lesson/{lessonId}/complete:
- *   patch:
- *     summary: Complete lesson
- *     tags: [Progress]
- *     security:
- *       - bearerAuth: []
- */
-router.patch('/:courseId/lesson/:lessonId/complete', authMiddleware, authorizeMiddleware('student'), validateMiddleware(completeLessonParamsSchema, 'params'), progressController.completeLesson);
+// NOTE: this static route must stay registered before the dynamic
+// "/:courseId" route below, otherwise Express would match
+// "/my-progress" as if "my-progress" were a courseId.
+router.get(
+    '/my-progress',
+    authMiddleware,
+    authorizeMiddleware('student'),
+    getStudentProgress
+);
 
-/**
- * @swagger
- * /progress/{courseId}/last-accessed:
- *   patch:
- *     summary: Update last accessed lesson
- *     tags: [Progress]
- *     security:
- *       - bearerAuth: []
- */
-router.patch('/:courseId/last-accessed', authMiddleware, authorizeMiddleware('student'), validateMiddleware(lastAccessedParamsSchema, 'params'), validateMiddleware(lastAccessedBodySchema, 'body'), progressController.updateLastAccessedLesson);
 
-/**
- * @swagger
- * /progress/{courseId}:
- *   get:
- *     summary: Get student's progress
- *     tags: [Progress]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/my-progress', authMiddleware, authorizeMiddleware('student'), progressController.getStudentProgress);
+router.patch(
+    '/:courseId/lesson/:lessonId/complete',
+    authMiddleware,
+    authorizeMiddleware('student'),
+    validateMiddleware(completeLessonParamsSchema, 'params'),
+    completeLesson
+);
 
-/**
- * @swagger
- * /progress/{courseId}:
- *   get:
- *     summary: Get course progress
- *     tags: [Progress]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/:courseId', authMiddleware, authorizeMiddleware('student'), validateMiddleware(courseProgressParamsSchema, 'params'), progressController.getCourseProgress);
+
+router.patch(
+    '/:courseId/last-accessed',
+    authMiddleware,
+    authorizeMiddleware('student'),
+    validateMiddleware(lastAccessedParamsSchema, 'params'),
+    validateMiddleware(lastAccessedBodySchema, 'body'),
+    updateLastAccessedLesson
+);
+
+
+router.get(
+    '/:courseId',
+    authMiddleware,
+    authorizeMiddleware('student'),
+    validateMiddleware(courseProgressParamsSchema, 'params'),
+    getCourseProgress
+);
+
 
 module.exports = router;

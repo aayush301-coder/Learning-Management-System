@@ -1,26 +1,49 @@
 const { z } = require('zod');
-const { objectIdSchema } = require('../../utils/zodSchemas');
 
-const completeLessonParamsSchema = z.object({
-    courseId: objectIdSchema,
-    lessonId: objectIdSchema,
-});
-
-const lastAccessedParamsSchema = z.object({
-    courseId: objectIdSchema,
-});
-
-const lastAccessedBodySchema = z.object({
-    lessonId: objectIdSchema,
-});
 
 const courseProgressParamsSchema = z.object({
-    courseId: objectIdSchema,
+
+    courseId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid course id'),
+
 });
 
+
+const completeLessonParamsSchema = z.object({
+
+    courseId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid course id'),
+
+    lessonId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid lesson id'),
+
+});
+
+
+const lastAccessedParamsSchema = z.object({
+
+    courseId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid course id'),
+
+});
+
+
+const lastAccessedBodySchema = z.object({
+
+    lessonId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid lesson id'),
+
+});
+
+
 module.exports = {
+    courseProgressParamsSchema,
     completeLessonParamsSchema,
     lastAccessedParamsSchema,
     lastAccessedBodySchema,
-    courseProgressParamsSchema,
 };

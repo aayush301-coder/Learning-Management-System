@@ -1,84 +1,71 @@
 const express = require('express');
-const cors = require('cors');
-const corsOptions = require('./config/cors');
 const helmet = require('helmet');
+const cors = require('cors');
 const morgan = require('morgan');
-const logger = require('./config/logger');
+
+const corsOptions = require('./config/cors');
+const errorMiddleware = require('./middlewares/error.middleware');
+
 const authRouter = require('./modules/auth/auth.routes');
+const userRouter = require('./modules/users/user.routes');
 const courseRouter = require('./modules/courses/course.routes');
 const sectionRouter = require('./modules/sections/section.routes');
 const lessonRouter = require('./modules/lessons/lesson.routes');
 const enrollmentRouter = require('./modules/enrollments/enrollment.routes');
 const progressRouter = require('./modules/progress/progress.routes');
 const reviewRouter = require('./modules/reviews/review.routes');
-const certificateRouter = require('./modules/certificates/certificate.routes');
-const wishlistRouter = require('./modules/wishlists/wishlist.routes');
-const paymentRouter = require('./modules/payments/payment.routes');
+const notificationRouter = require('./modules/notifications/notification.routes');
 const dashboardRouter = require('./modules/dashboard/dashboard.routes');
 const uploadRouter = require('./modules/uploads/upload.routes');
-const errorHandler = require('./middlewares/error.middleware');
-const { apiLimiter } = require('./middlewares/rateLimiter.middleware');
-const requestLogger = require('./middlewares/requestLogger.middleware');
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
+
 
 const app = express();
 
-app.use(cors(corsOptions));
+
 app.use(helmet());
-
-app.use(
-    morgan('combined', {
-        stream: {
-            write: (message) => {
-                logger.info(message.trim());
-            },
-        },
-    })
-);
-
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.urlencoded({
-    extended: true,
-}));
+app.use(express.urlencoded({ extended: true }));
 
-app.use(requestLogger);
+if (process.env.NODE_ENV !== 'test') {
 
-app.use(apiLimiter);
+    app.use(morgan('dev'));
 
-//Health Check Route
+}
+
+
 app.get('/health', (req, res) => {
-    return res.status(200).json({
-        success: true,
-        message: 'Server is running',
-    });
+
+    res.status(200).json({ success: true, message: 'Okla API is running' });
+
 });
 
-//API Routes
+
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/users', userRouter);
 app.use('/api/v1/courses', courseRouter);
-app.use('/api/v1', sectionRouter);
-app.use('/api/v1', lessonRouter);
-app.use('/api/v1', enrollmentRouter);
+app.use('/api/v1/sections', sectionRouter);
+app.use('/api/v1/lessons', lessonRouter);
+app.use('/api/v1/enrollments', enrollmentRouter);
 app.use('/api/v1/progress', progressRouter);
 app.use('/api/v1/reviews', reviewRouter);
-app.use('/api/v1/certificates', certificateRouter);
-app.use('/api/v1/wishlists', wishlistRouter);
-app.use('/api/v1/payments', paymentRouter);
+app.use('/api/v1/notifications', notificationRouter);
 app.use('/api/v1/dashboard', dashboardRouter);
 app.use('/api/v1/uploads', uploadRouter);
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-//404 Route Handler
-app.use((req, res) => {
-    return res.status(404).json({
-        success: false,
-        message: 'Route not found',
-    });
+app.use((req, res, next) => {
+
+    const error = new Error(`Route not found: ${req.originalUrl}`);
+
+    error.statusCode = 404;
+
+    next(error);
+
 });
 
-//Global Error Handler
-app.use(errorHandler);
+
+app.use(errorMiddleware);
+
 
 module.exports = app;

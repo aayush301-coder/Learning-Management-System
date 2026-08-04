@@ -1,15 +1,22 @@
 const authorizeMiddleware = (...allowedRoles) => {
-    return (req, res, next) => {
-        const userRole = req.user.role;
 
-        if(!allowedRoles.includes(userRole)) {
-            return res.status(403).json({
-                success: false,
-                message: 'You are not authorized to access this resource',
-            });
+    return (req, res, next) => {
+
+        if (!req.user || !allowedRoles.includes(req.user.role)) {
+
+            const error = new Error('You are not authorized to perform this action');
+
+            error.statusCode = 403;
+
+            return next(error);
+
         }
+
         next();
+
     };
+
 };
+
 
 module.exports = authorizeMiddleware;

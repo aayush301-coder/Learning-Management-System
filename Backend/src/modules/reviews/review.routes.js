@@ -1,97 +1,58 @@
-const express = require('express');
-const router = express.Router();
-const reviewController = require('./review.controller');
+const router = require('express').Router();
+
 const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
 const validateMiddleware = require('../../middlewares/validate.middleware');
+
+const {
+    getReviewsByCourse,
+    createReview,
+    updateReview,
+    deleteReview,
+} = require('./review.controller');
+
 const {
     createReviewSchema,
     updateReviewSchema,
-    courseReviewsParamsSchema,
+    courseIdParamsSchema,
     reviewIdParamsSchema,
 } = require('./review.validation');
 
-/**
- * @swagger
- * /reviews:
- *   post:
- *     summary: Create review
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- */
-router.post(
-    '/',
-    authMiddleware,
-    authorizeMiddleware('student'),
-    validateMiddleware(createReviewSchema, 'body'),
-    reviewController.createReview
+
+router.get(
+    '/course/:courseId',
+    validateMiddleware(courseIdParamsSchema, 'params'),
+    getReviewsByCourse
 );
 
-/**
- * @swagger
- * /reviews/{reviewId}:
- *   patch:
- *     summary: Update review
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- */
+
+router.post(
+    '/course/:courseId',
+    authMiddleware,
+    authorizeMiddleware('student'),
+    validateMiddleware(courseIdParamsSchema, 'params'),
+    validateMiddleware(createReviewSchema, 'body'),
+    createReview
+);
+
+
 router.patch(
     '/:reviewId',
     authMiddleware,
     authorizeMiddleware('student'),
     validateMiddleware(reviewIdParamsSchema, 'params'),
     validateMiddleware(updateReviewSchema, 'body'),
-    reviewController.updateReview
+    updateReview
 );
 
-/**
- * @swagger
- * /reviews/{reviewId}:
- *   delete:
- *     summary: Delete review
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- */
+
 router.delete(
     '/:reviewId',
     authMiddleware,
-    authorizeMiddleware('student'),
+    authorizeMiddleware('student', 'admin'),
     validateMiddleware(reviewIdParamsSchema, 'params'),
-    reviewController.deleteReview
+    deleteReview
 );
 
-/**
- * @swagger
- * /reviews/course/{courseId}:
- *   get:
- *     summary: Get course reviews
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-    '/course/:courseId',
-    validateMiddleware(courseReviewsParamsSchema, 'params'),
-    reviewController.getCourseReviews
-);
-
-/**
- * @swagger
- * /reviews/my-reviews:
- *   get:
- *     summary: Get student's reviews
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- */
-router.get(
-    '/my-reviews',
-    authMiddleware,
-    authorizeMiddleware('student'),
-    reviewController.getMyReviews
-);
 
 module.exports = router;

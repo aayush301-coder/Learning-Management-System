@@ -1,55 +1,55 @@
 const asyncHandler = require('../../utils/asyncHandler');
+
 const dashboardService = require('./dashboard.service');
 
-const getStats = asyncHandler(async (req,res)=>{
 
-    const result = await dashboardService.getStats();
+const getDashboardStats = asyncHandler(async (req, res) => {
 
-    return res.status(200).json({
+    const stats = await dashboardService.getDashboardStats();
+
+    res.status(200).json({
+
         success: true,
-        message: 'Dashboard statistics retrieved successfully',
-        data: result,
+        message: 'Dashboard stats retrieved successfully',
+        data: stats,
+
     });
 
 });
 
-const getPopularCourses = asyncHandler(async(req,res)=>{
 
-    const result = await dashboardService.getPopularCourses();
+const getPopularCourses = asyncHandler(async (req, res) => {
 
-    return res.status(200).json({
+    const popularCourses = await dashboardService.getPopularCourses();
+
+    res.status(200).json({
+
         success: true,
         message: 'Popular courses retrieved successfully',
-        data: result,
+        data: popularCourses,
+
     });
 
 });
 
-const getRevenueAnalytics = asyncHandler(async(req,res)=>{
 
-    const result = await dashboardService.getRevenueAnalytics();
+const getRecentActivity = asyncHandler(async (req, res) => {
 
-    return res.status(200).json({
-        success: true,
-        message: 'Revenue analytics retrieved successfully',
-        data: result,
-    });
+    const activity = await dashboardService.getRecentActivity();
 
-});
+    res.status(200).json({
 
-const getRecentActivity = asyncHandler (async (req, res)=>{
-    const result = await dashboardService.getRecentActivity();
-
-    return res.status(200).json({
         success: true,
         message: 'Recent activity retrieved successfully',
-        data: result,
+        data: activity,
+
     });
+
 });
 
+
 module.exports = {
-    getStats,
+    getDashboardStats,
     getPopularCourses,
-    getRevenueAnalytics,
     getRecentActivity,
 };

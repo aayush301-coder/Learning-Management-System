@@ -1,9 +1,6 @@
-const userRoles = [
-    'admin',
-    'student',
-    'instructor',
-];
+const userRoles = ['student', 'instructor', 'admin'];
+
 
 module.exports = {
     userRoles,
-}
+};

@@ -1,54 +1,71 @@
 const asyncHandler = require('../../utils/asyncHandler');
+
 const lessonService = require('./lesson.service');
 
-const createLesson = asyncHandler(async (req, res) => {
-    const result = await lessonService.createLesson(req.validated.params, req.validated.body, req.user);
-    return res.status(201).json({
-        success: true,
-        message: 'Lesson Created Successfully',
-        data: result
-    });
-});
 
 const getLessonsBySection = asyncHandler(async (req, res) => {
-    const result = await lessonService.getLessonsBySection(req.validated.params, req.user);
-    return res.status(200).json({
+
+    const lessons = await lessonService.getLessonsBySection(req.validated.params);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Lessons Fetched Successfully',
-        data: result
+        message: 'Lessons retrieved successfully',
+        data: lessons,
+
     });
+
 });
 
-const getLessonById = asyncHandler(async (req, res) => {
-    const result = await lessonService.getLessonById(req.validated.params, req.user);
-    return res.status(200).json({
+
+const createLesson = asyncHandler(async (req, res) => {
+
+    const lesson = await lessonService.createLesson(req.validated.params, req.validated.body, req.user);
+
+    res.status(201).json({
+
         success: true,
-        message: 'Lesson Fetched Successfully',
-        data: result
+        message: 'Lesson created successfully',
+        data: lesson,
+
     });
+
 });
+
 
 const updateLesson = asyncHandler(async (req, res) => {
-    const result = await lessonService.updateLesson(req.validated.params, req.validated.body, req.user);
-    return res.status(200).json({
+
+    const lesson = await lessonService.updateLesson(req.validated.params, req.validated.body, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Lesson Updated Successfully',
-        data: result
+        message: 'Lesson updated successfully',
+        data: lesson,
+
     });
+
 });
+
 
 const deleteLesson = asyncHandler(async (req, res) => {
+
     const result = await lessonService.deleteLesson(req.validated.params, req.user);
-    return res.status(200).json({
+
+    res.status(200).json({
+
         success: true,
-        message: result.message
+        message: 'Lesson deleted successfully',
+        data: result,
+
     });
+
 });
 
+
 module.exports = {
-    createLesson,
     getLessonsBySection,
-    getLessonById,
+    createLesson,
     updateLesson,
     deleteLesson,
-}
+};

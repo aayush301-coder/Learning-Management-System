@@ -1,64 +1,58 @@
-const express = require('express');
-const router = express.Router();
-const lessonController = require('./lesson.controller');
-const validateMiddleware = require('../../middlewares/validate.middleware');
+const router = require('express').Router();
+
 const authMiddleware = require('../../middlewares/auth.middleware');
 const authorizeMiddleware = require('../../middlewares/authorize.middleware');
-const {createLessonSchema, updateLessonSchema, sectionIdSchema, lessonIdSchema} = require('./lesson.validation');
+const validateMiddleware = require('../../middlewares/validate.middleware');
 
-/**
- * @swagger
- * /sections/{sectionId}/lessons:
- *   post:
- *     summary: Create lesson
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- */
-router.post('/sections/:sectionId/lessons', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(sectionIdSchema, 'params'), validateMiddleware(createLessonSchema), lessonController.createLesson);
+const {
+    getLessonsBySection,
+    createLesson,
+    updateLesson,
+    deleteLesson,
+} = require('./lesson.controller');
 
-/**
- * @swagger
- * /sections/{sectionId}/lessons:
- *   get:
- *     summary: Get lessons by section
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/sections/:sectionId/lessons', authMiddleware, validateMiddleware(sectionIdSchema, 'params'), lessonController.getLessonsBySection);
+const {
+    createLessonSchema,
+    updateLessonSchema,
+    sectionIdParamsSchema,
+    lessonIdParamsSchema,
+} = require('./lesson.validation');
 
-/**
- * @swagger
- * /lessons/{lessonId}:
- *   get:
- *     summary: Get lesson by ID
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/lessons/:lessonId', authMiddleware, validateMiddleware(lessonIdSchema, 'params'), lessonController.getLessonById);
 
-/**
- * @swagger
- * /lessons/{lessonId}:
- *   patch:
- *     summary: Update lesson
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- */
-router.patch('/lessons/:lessonId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(lessonIdSchema, 'params'), validateMiddleware(updateLessonSchema), lessonController.updateLesson);
+router.get(
+    '/section/:sectionId',
+    validateMiddleware(sectionIdParamsSchema, 'params'),
+    getLessonsBySection
+);
 
-/**
- * @swagger
- * /lessons/{lessonId}:
- *   delete:
- *     summary: Delete lesson
- *     tags: [Lessons]
- *     security:
- *       - bearerAuth: []
- */
-router.delete('/lessons/:lessonId', authMiddleware, authorizeMiddleware('instructor', 'admin'), validateMiddleware(lessonIdSchema, 'params'), lessonController.deleteLesson);
+
+router.post(
+    '/section/:sectionId',
+    authMiddleware,
+    authorizeMiddleware('instructor', 'admin'),
+    validateMiddleware(sectionIdParamsSchema, 'params'),
+    validateMiddleware(createLessonSchema, 'body'),
+    createLesson
+);
+
+
+router.patch(
+    '/:lessonId',
+    authMiddleware,
+    authorizeMiddleware('instructor', 'admin'),
+    validateMiddleware(lessonIdParamsSchema, 'params'),
+    validateMiddleware(updateLessonSchema, 'body'),
+    updateLesson
+);
+
+
+router.delete(
+    '/:lessonId',
+    authMiddleware,
+    authorizeMiddleware('instructor', 'admin'),
+    validateMiddleware(lessonIdParamsSchema, 'params'),
+    deleteLesson
+);
+
 
 module.exports = router;

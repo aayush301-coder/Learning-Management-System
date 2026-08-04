@@ -1,169 +1,181 @@
 const asyncHandler = require('../../utils/asyncHandler');
+
 const courseService = require('./course.service');
 
 
-const createCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.createCourse(
-        req.validated.body,
-        req.user._id
-    );
-
-    return res.status(201).json({
-        success: true,
-        message: 'Course Created Successfully',
-        data: result,
-    });
-});
-
-
 const getAllCourses = asyncHandler(async (req, res) => {
-    const result = await courseService.getAllCourses(
-        req.validated.query,
-        req.user
-    );
 
-    return res.status(200).json({
+    const result = await courseService.getAllCourses(req.validated.query, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Courses Retrieved Successfully',
+        message: 'Courses retrieved successfully',
         data: result,
+
     });
+
 });
 
 
 const getMyCourses = asyncHandler(async (req, res) => {
-    const result = await courseService.getMyCourses(
-        req.validated.query,
-        req.user
-    );
 
-    return res.status(200).json({
+    const result = await courseService.getMyCourses(req.validated.query, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'My Courses Retrieved Successfully',
+        message: 'Your courses retrieved successfully',
         data: result,
+
     });
+
 });
 
 
 const getCourseById = asyncHandler(async (req, res) => {
-    const result = await courseService.getCourseById(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.getCourseById(req.validated.params, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Retrieved Successfully',
-        data: result,
+        message: 'Course retrieved successfully',
+        data: course,
+
     });
+
+});
+
+
+const createCourse = asyncHandler(async (req, res) => {
+
+    const course = await courseService.createCourse(req.validated.body, req.user);
+
+    res.status(201).json({
+
+        success: true,
+        message: 'Course created successfully',
+        data: course,
+
+    });
+
 });
 
 
 const updateCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.updateCourse(
-        req.validated.params,
-        req.validated.body,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.updateCourse(req.validated.params, req.validated.body, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Updated Successfully',
-        data: result,
+        message: 'Course updated successfully',
+        data: course,
+
     });
+
 });
 
 
 const deleteCourse = asyncHandler(async (req, res) => {
-    await courseService.deleteCourse(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const result = await courseService.deleteCourse(req.validated.params, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Deleted Successfully',
+        message: 'Course deleted successfully',
+        data: result,
+
     });
+
 });
 
 
-const submitCourseForReview = asyncHandler(async (req, res) => {
-    const result = await courseService.submitCourseForReview(
-        req.validated.params,
-        req.user
-    );
+const submitForReview = asyncHandler(async (req, res) => {
 
-    return res.status(200).json({
+    const course = await courseService.submitForReview(req.validated.params, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course submitted for review successfully',
-        data: result,
+        message: 'Course submitted for review',
+        data: course,
+
     });
+
 });
 
 
 const publishCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.publishCourse(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.publishCourse(req.validated.params);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Published Successfully',
-        data: result,
+        message: 'Course published successfully',
+        data: course,
+
     });
+
 });
 
 
 const unpublishCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.unpublishCourse(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.unpublishCourse(req.validated.params, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Unpublished Successfully',
-        data: result,
+        message: 'Course unpublished successfully',
+        data: course,
+
     });
+
 });
 
 
 const archiveCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.archiveCourse(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.archiveCourse(req.validated.params);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Archived Successfully',
-        data: result,
+        message: 'Course archived successfully',
+        data: course,
+
     });
+
 });
 
 
 const restoreArchivedCourse = asyncHandler(async (req, res) => {
-    const result = await courseService.restoreArchivedCourse(
-        req.validated.params,
-        req.user
-    );
 
-    return res.status(200).json({
+    const course = await courseService.restoreArchivedCourse(req.validated.params);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Course Restored Successfully',
-        data: result,
+        message: 'Course restored successfully',
+        data: course,
+
     });
+
 });
 
 
 module.exports = {
-    createCourse,
     getAllCourses,
     getMyCourses,
     getCourseById,
+    createCourse,
     updateCourse,
     deleteCourse,
-    submitCourseForReview,
+    submitForReview,
     publishCourse,
     unpublishCourse,
     archiveCourse,

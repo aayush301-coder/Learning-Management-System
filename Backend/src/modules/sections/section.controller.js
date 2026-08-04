@@ -1,54 +1,71 @@
 const asyncHandler = require('../../utils/asyncHandler');
+
 const sectionService = require('./section.service');
 
-const createSection = asyncHandler(async (req, res) => {
-    const result = await sectionService.createSection(req.validated.params, req.validated.body, req.user);
-    return res.status(201).json({
-        success: true,
-        message: 'Section Created Successfully',
-        data: result
-    });
-});
 
 const getSectionsByCourse = asyncHandler(async (req, res) => {
-    const result = await sectionService.getSectionsByCourse(req.validated.params, req.user);
-    return res.status(200).json({
+
+    const sections = await sectionService.getSectionsByCourse(req.validated.params);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Sections Fetched Successfully',
-        data: result
+        message: 'Sections retrieved successfully',
+        data: sections,
+
     });
+
 });
 
-const getSectionById = asyncHandler(async (req, res) => {
-    const result = await sectionService.getSectionById(req.validated.params, req.user);
-    return res.status(200).json({
+
+const createSection = asyncHandler(async (req, res) => {
+
+    const section = await sectionService.createSection(req.validated.params, req.validated.body, req.user);
+
+    res.status(201).json({
+
         success: true,
-        message: 'Section Fetched Successfully',
-        data: result
+        message: 'Section created successfully',
+        data: section,
+
     });
+
 });
+
 
 const updateSection = asyncHandler(async (req, res) => {
-    const result = await sectionService.updateSection(req.validated.params, req.validated.body, req.user);
-    return res.status(200).json({
+
+    const section = await sectionService.updateSection(req.validated.params, req.validated.body, req.user);
+
+    res.status(200).json({
+
         success: true,
-        message: 'Section Updated Successfully',
-        data: result
+        message: 'Section updated successfully',
+        data: section,
+
     });
+
 });
+
 
 const deleteSection = asyncHandler(async (req, res) => {
+
     const result = await sectionService.deleteSection(req.validated.params, req.user);
-    return res.status(200).json({
+
+    res.status(200).json({
+
         success: true,
-        message: result.message
+        message: 'Section deleted successfully',
+        data: result,
+
     });
+
 });
 
+
 module.exports = {
-    createSection,
     getSectionsByCourse,
-    getSectionById,
+    createSection,
     updateSection,
-    deleteSection
+    deleteSection,
 };

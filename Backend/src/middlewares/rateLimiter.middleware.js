@@ -1,89 +1,46 @@
-const rateLimit = require('express-rate-limit');
+// Lightweight in-memory rate limiter (no external store needed for
+// a single-instance deployment). Keyed by IP + route path.
+const requestLog = new Map();
 
+const rateLimiterMiddleware = (options = {}) => {
 
+    const windowMs = options.windowMs || 15 * 60 * 1000;
+    const max = options.max || 100;
 
-const createLimiter = (options) => {
+    return (req, res, next) => {
 
-    if (process.env.NODE_ENV === 'test') {
+        const key = `${req.ip}:${req.baseUrl}`;
 
-        return (req, res, next) => {
-            next();
-        };
+        const now = Date.now();
 
-    }
+        const entry = requestLog.get(key) || { count: 0, resetAt: now + windowMs };
 
+        if (now > entry.resetAt) {
 
-    return rateLimit(options);
+            entry.count = 0;
+            entry.resetAt = now + windowMs;
+
+        }
+
+        entry.count += 1;
+
+        requestLog.set(key, entry);
+
+        if (entry.count > max) {
+
+            const error = new Error('Too many requests, please try again later');
+
+            error.statusCode = 429;
+
+            return next(error);
+
+        }
+
+        next();
+
+    };
 
 };
 
 
-
-
-// General API limiter
-const apiLimiter = createLimiter({
-
-    windowMs: 15 * 60 * 1000,
-
-    max: 200,
-
-    message: {
-        success: false,
-        message: 'Too many requests. Please try again later.',
-    },
-
-    standardHeaders: true,
-
-    legacyHeaders: false,
-
-});
-
-
-
-
-// Authentication limiter
-const authLimiter = createLimiter({
-
-    windowMs: 15 * 60 * 1000,
-
-    max: 10,
-
-    message: {
-        success: false,
-        message: 'Too many authentication attempts. Please try again later.',
-    },
-
-    standardHeaders: true,
-
-    legacyHeaders: false,
-
-});
-
-
-
-
-// Payment limiter
-const paymentLimiter = createLimiter({
-
-    windowMs: 15 * 60 * 1000,
-
-    max: 20,
-
-    message: {
-        success:false,
-        message:'Too many payment requests. Please try again later.',
-    },
-
-    standardHeaders:true,
-
-    legacyHeaders:false,
-
-});
-
-
-
-module.exports = {
-    apiLimiter,
-    authLimiter,
-    paymentLimiter,
-};
+module.exports = rateLimiterMiddleware;

@@ -3,85 +3,119 @@ const Course = require('../courses/course.model');
 const Progress = require('../progress/progress.model');
 const notificationService = require('../notifications/notification.service');
 
+
 const enrollInCourse = async (validatedParams, authenticatedUser) => {
-    const { courseId } = validatedParams;
-    const course = await Course.findById(courseId);
+
+    const course = await Course.findById(validatedParams.courseId);
 
     if (!course) {
+
         const error = new Error('Course not found');
+
         error.statusCode = 404;
+
         throw error;
+
     }
-    if (authenticatedUser.role !== 'student') {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
-    }
+
     if (course.status !== 'published') {
-        const error = new Error('Only published courses can be enrolled in.');
-        error.statusCode = 409;
+
+        const error = new Error('This course is not currently available for enrollment');
+
+        error.statusCode = 400;
+
         throw error;
+
     }
 
-    const enrolled = await Enrollment.findOne({ student: authenticatedUser._id, course: courseId });
+    const existingEnrollment = await Enrollment.findOne({
+        student: authenticatedUser._id,
+        course: course._id,
+    });
 
-    if (enrolled) {
-        const error = new Error('You are already enrolled in this course.');
+    if (existingEnrollment) {
+
+        const error = new Error('You are already enrolled in this course');
+
         error.statusCode = 409;
+
         throw error;
+
     }
 
     const enrollment = await Enrollment.create({
-        student: authenticatedUser._id,
-        course: courseId,
-    });
 
-    await notificationService.createNotification({
-        recipient: authenticatedUser._id,
-        title: 'Enrollment Successful',
-        message: `You are now enrolled in ${course.title}`,
-        type: 'enrollment',
-        referenceId: course._id,
+        student: authenticatedUser._id,
+        course: course._id,
+
     });
 
     await Progress.create({
+
         student: authenticatedUser._id,
-        course: courseId,
+        course: course._id,
+
+    });
+
+    await notificationService.createNotification({
+
+        userId: authenticatedUser._id,
+        title: 'Enrollment confirmed',
+        message: `You are now enrolled in "${course.title}". Happy learning!`,
+        type: 'enrollment',
+
     });
 
     return enrollment;
+
 };
+
 
 const getMyEnrollments = async (authenticatedUser) => {
-    if (authenticatedUser.role !== 'student') {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
-    }
 
-    const enrollments = await Enrollment.find({student: authenticatedUser._id}).populate('course', 'title thumbnail category level instructor');
+    const enrollments = await Enrollment.find({
+        student: authenticatedUser._id,
+        status: 'active',
+    })
+        .populate({
+            path: 'course',
+            populate: { path: 'instructor', select: 'name email avatar' },
+        })
+        .sort({ createdAt: -1 });
+
     return enrollments;
+
 };
+
 
 const cancelEnrollment = async (validatedParams, authenticatedUser) => {
-    const { courseId } = validatedParams;
 
-    if (authenticatedUser.role !== 'student') {
-        const error = new Error('Not authorized');
-        error.statusCode = 403;
-        throw error;
-    }
-    const enrolled = await Enrollment.findOne({ student: authenticatedUser._id, course: courseId });
-    if (!enrolled) {
-        const error = new Error('You are not enrolled in this course.');
+    const enrollment = await Enrollment.findOne({
+        student: authenticatedUser._id,
+        course: validatedParams.courseId,
+    });
+
+    if (!enrollment) {
+
+        const error = new Error('Enrollment not found');
+
         error.statusCode = 404;
+
         throw error;
+
     }
-    await enrolled.deleteOne();
-    return {
-        message: 'Enrollment cancelled successfully.',
-    }
+
+    await enrollment.deleteOne();
+
+    await Progress.deleteOne({
+        student: authenticatedUser._id,
+        course: validatedParams.courseId,
+    });
+
+    return { courseId: validatedParams.courseId };
+
 };
+
 
 module.exports = {
     enrollInCourse,

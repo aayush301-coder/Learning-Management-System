@@ -1,72 +1,48 @@
 const asyncHandler = require('../../utils/asyncHandler');
+
 const notificationService = require('./notification.service');
 
 
-const getMyNotifications = asyncHandler(
-async (req,res)=>{
+const getMyNotifications = asyncHandler(async (req, res) => {
 
-    const result =
-        await notificationService.getMyNotifications(
-            req.user
-        );
+    const result = await notificationService.getMyNotifications(req.validated.query, req.user);
 
+    res.status(200).json({
 
-    return res.status(200).json({
-        success:true,
-        message:'Notifications retrieved successfully',
-        data:result,
+        success: true,
+        message: 'Notifications retrieved successfully',
+        data: result,
+
     });
 
 });
 
 
-const markNotificationAsRead = asyncHandler(
-async(req,res)=>{
+const markAsRead = asyncHandler(async (req, res) => {
 
-    const result =
-        await notificationService.markNotificationAsRead(
-            req.validated.params,
-            req.user
-        );
+    const notification = await notificationService.markAsRead(req.validated.params, req.user);
 
+    res.status(200).json({
 
-    return res.status(200).json({
-        success:true,
-        message:'Notification marked as read',
-        data:result,
+        success: true,
+        message: 'Notification marked as read',
+        data: notification,
+
     });
 
 });
 
 
-const markAllNotificationsAsRead = asyncHandler(
-async(req,res)=>{
+const markAllAsRead = asyncHandler(async (req, res) => {
 
-    await notificationService.markAllNotificationsAsRead(
-        req.user
-    );
+    const result = await notificationService.markAllAsRead(req.user);
 
+    res.status(200).json({
 
-    return res.status(200).json({
-        success:true,
-        message:'All notifications marked as read',
-    });
+        success: true,
+        message: 'All notifications marked as read',
+        data: result,
 
-});
-
-
-const deleteNotification = asyncHandler(
-async(req,res)=>{
-
-    await notificationService.deleteNotification(
-        req.validated.params,
-        req.user
-    );
-
-
-    return res.status(200).json({
-        success:true,
-        message:'Notification deleted successfully',
     });
 
 });
@@ -74,7 +50,6 @@ async(req,res)=>{
 
 module.exports = {
     getMyNotifications,
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    deleteNotification,
+    markAsRead,
+    markAllAsRead,
 };

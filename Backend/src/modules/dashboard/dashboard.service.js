@@ -1,62 +1,56 @@
 const User = require('../users/user.model');
 const Course = require('../courses/course.model');
 const Enrollment = require('../enrollments/enrollment.model');
-const Payment = require('../payments/payment.model');
-const Review = require('../reviews/review.model');
 
-const getStats = async () => {
 
-    const [
-        totalUsers,
-        totalStudents,
-        totalInstructors,
-        totalCourses,
-        publishedCourses,
-        pendingReviewCourses,
-        totalEnrollments,
-        revenueResult,
-    ] = await Promise.all([
+const getDashboardStats = async () => {
+
+    const [totalUsers, totalStudents, totalInstructors] = await Promise.all([
 
         User.countDocuments(),
+        User.countDocuments({ role: 'student' }),
+        User.countDocuments({ role: 'instructor' }),
 
-        User.countDocuments({
-            role: 'student',
-        }),
-
-        User.countDocuments({
-            role: 'instructor',
-        }),
-
-        Course.countDocuments(),
-
-        Course.countDocuments({
-            status: 'published',
-        }),
-
-        Course.countDocuments({
-            status: 'pending_review',
-        }),
-
-        Enrollment.countDocuments(),
-
-        Payment.aggregate([
-            {
-                $match: {
-                    status: 'completed',
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalRevenue: {
-                        $sum: '$amount',
-                    },
-                },
-            },
-        ]),
     ]);
 
+    const [totalCourses, publishedCourses, pendingReviewCourses] = await Promise.all([
+
+        Course.countDocuments(),
+        Course.countDocuments({ status: 'published' }),
+        Course.countDocuments({ status: 'pending_review' }),
+
+    ]);
+
+    const totalEnrollments = await Enrollment.countDocuments({ status: 'active' });
+
+    const revenueResult = await Enrollment.aggregate([
+
+        { $match: { status: 'active' } },
+
+        {
+            $lookup: {
+                from: 'courses',
+                localField: 'course',
+                foreignField: '_id',
+                as: 'course',
+            },
+        },
+
+        { $unwind: '$course' },
+
+        {
+            $group: {
+                _id: null,
+                totalRevenue: { $sum: '$course.price' },
+            },
+        },
+
+    ]);
+
+    const totalRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
+
     return {
+
         users: {
             total: totalUsers,
             students: totalStudents,
@@ -74,188 +68,72 @@ const getStats = async () => {
         },
 
         revenue: {
-            total:
-                revenueResult[0]?.totalRevenue || 0,
+            total: totalRevenue,
         },
+
     };
+
 };
+
 
 const getPopularCourses = async () => {
 
-    const popularCourses =
-        await Enrollment.aggregate([
+    const popular = await Enrollment.aggregate([
 
-            {
-                $group: {
-                    _id: '$course',
-                    totalStudents: {
-                        $sum: 1,
-                    },
-                },
+        { $match: { status: 'active' } },
+
+        {
+            $group: {
+                _id: '$course',
+                enrollmentCount: { $sum: 1 },
             },
+        },
 
-            {
-                $sort: {
-                    totalStudents: -1,
-                },
+        { $sort: { enrollmentCount: -1 } },
+
+        { $limit: 5 },
+
+        {
+            $lookup: {
+                from: 'courses',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'course',
             },
+        },
 
-            {
-                $limit: 10,
+        { $unwind: '$course' },
+
+        {
+            $project: {
+                _id: 0,
+                course: '$course',
+                enrollmentCount: 1,
             },
-
-            {
-                $lookup: {
-                    from: 'courses',
-                    localField: '_id',
-                    foreignField: '_id',
-                    as: 'course',
-                },
-            },
-
-            {
-                $unwind: '$course',
-            },
-
-            {
-                $project: {
-                    _id: 0,
-                    courseId: '$course._id',
-                    title: '$course.title',
-                    thumbnail: '$course.thumbnail',
-                    students:
-                        '$totalStudents',
-                },
-            },
-
-        ]);
-
-    return popularCourses;
-};
-
-const getRevenueAnalytics = async () => {
-
-    const revenue =
-        await Payment.aggregate([
-
-            {
-                $match: {
-                    status: 'completed',
-                },
-            },
-
-            {
-                $group: {
-
-                    _id: {
-                        year: {
-                            $year: '$createdAt',
-                        },
-
-                        month: {
-                            $month: '$createdAt',
-                        },
-                    },
-
-                    revenue: {
-                        $sum: '$amount',
-                    },
-
-                    transactions: {
-                        $sum: 1,
-                    },
-                },
-            },
-            {
-                $sort: {
-                    '_id.year': 1,
-                    '_id.month': 1,
-                },
-            },
-        ]);
-
-    return revenue;
-};
-
-const getRecentActivity = async () => {
-
-    const [
-        recentUsers,
-        recentEnrollments,
-        recentPayments,
-        recentReviews,
-    ] = await Promise.all([
-
-        User.find()
-            .sort({
-                createdAt: -1,
-            })
-            .limit(5)
-            .select(
-                'name email role createdAt'
-            )
-            .lean(),
-
-        Enrollment.find()
-            .sort({
-                createdAt: -1,
-            })
-            .limit(5)
-            .populate(
-                'student',
-                'name email'
-            )
-            .populate(
-                'course',
-                'title'
-            )
-            .lean(),
-
-        Payment.find({
-            status: 'completed',
-        })
-            .sort({
-                createdAt: -1,
-            })
-            .limit(5)
-            .populate(
-                'student',
-                'name email'
-            )
-            .populate(
-                'course',
-                'title'
-            )
-            .lean(),
-
-        Review.find()
-            .sort({
-                createdAt: -1,
-            })
-            .limit(5)
-            .populate(
-                'student',
-                'name email'
-            )
-            .populate(
-                'course',
-                'title'
-            )
-            .lean(),
+        },
 
     ]);
 
-    return {
-        recentUsers,
-        recentEnrollments,
-        recentPayments,
-        recentReviews,
-    };
+    return popular;
+
 };
 
+
+const getRecentActivity = async () => {
+
+    const recentEnrollments = await Enrollment.find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('student', 'name email')
+        .populate('course', 'title');
+
+    return recentEnrollments;
+
+};
+
+
 module.exports = {
-    getStats,
+    getDashboardStats,
     getPopularCourses,
-    getRevenueAnalytics,
     getRecentActivity,
 };

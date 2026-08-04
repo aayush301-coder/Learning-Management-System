@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1d2333;
+  --color-ink-soft: #454c63;
+  --color-inkblue: #3b4c89;
+  --color-inkblue-light: #eef0f9;
+  --color-paper: #f7f6f2;
+  --color-paper-dim: #efede6;
+  --color-highlighter: #f2b705;
+  --color-highlighter-soft: #fdf1cc;
+  --color-sage: #4c7a5e;
+  --color-sage-soft: #e6efe9;
+  --color-clay: #b4453a;
+  --color-clay-soft: #f7e6e4;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: var(--color-highlighter);
+  color: var(--color-ink);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.highlight-mark {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-highlighter) 55%, transparent) 0.45em,
+    transparent 0.45em
+  );
+  background-repeat: no-repeat;
+  padding: 0 0.05em;
+}

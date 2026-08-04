@@ -1,27 +1,46 @@
 const { z } = require('zod');
 
+
 const createSectionSchema = z.object({
-    title: z.string().min(1).trim(),
-    description: z.string().optional(),
+
+    title: z
+        .string()
+        .trim()
+        .min(3, 'Title must be at least 3 characters')
+        .max(150, 'Title cannot exceed 150 characters'),
+
+    order: z.coerce
+        .number()
+        .min(0, 'Order cannot be negative')
+        .default(0),
+
 });
 
-const updateSectionSchema = z.object({
-    title: z.string().min(1).trim().optional(),
-    description: z.string().optional(),
-    order: z.number().int().positive().optional(),
-}).refine(data => Object.keys(data).length > 0);
 
-const courseIdSchema = z.object({
-    courseId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+const updateSectionSchema = createSectionSchema.partial();
+
+
+const courseIdParamsSchema = z.object({
+
+    courseId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid course id'),
+
 });
 
-const sectionIdSchema = z.object({
-    sectionId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+
+const sectionIdParamsSchema = z.object({
+
+    sectionId: z
+        .string()
+        .regex(/^[0-9a-fA-F]{24}$/, 'Invalid section id'),
+
 });
+
 
 module.exports = {
     createSectionSchema,
     updateSectionSchema,
-    courseIdSchema,
-    sectionIdSchema
+    courseIdParamsSchema,
+    sectionIdParamsSchema,
 };
